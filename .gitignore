@@ -1,0 +1,8 @@
+.env
+venv/
+cache/
+logs/
+__pycache__/
+*.pyc
+*.sqlite3
+b2b_telegram_agent.db
