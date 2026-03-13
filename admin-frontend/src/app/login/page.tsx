@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Bot, Lock, User, AlertCircle } from 'lucide-react'
 
@@ -40,14 +40,8 @@ export default function LoginPage() {
       // Set cookies for middleware
       Cookies.set('auth_token', data.token, { expires: 7 })
       
-      setSession(JSON.parse(JSON.stringify({
-        user_id: data.user_id,
-        username: data.username,
-        role: data.role,
-        business_id: data.business_id
-      })))
-      
-      await refreshSession()
+      // Hard redirect to dashboard.
+      // The new page load will naturally pick up the token/session from storage.
       window.location.href = '/dashboard'
     } catch (err: any) {
       setError(err.message || 'Login failed. Please try again.')
