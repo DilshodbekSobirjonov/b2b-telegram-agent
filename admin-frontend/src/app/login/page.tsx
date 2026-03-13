@@ -13,8 +13,13 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const router = useRouter()
-  const { refreshSession } = useAuth()
+  const { session, loading: authLoading, refreshSession } = useAuth()
+
+  useEffect(() => {
+    if (!authLoading && session) {
+      window.location.href = '/dashboard'
+    }
+  }, [authLoading, session])
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -35,8 +40,15 @@ export default function LoginPage() {
       // Set cookies for middleware
       Cookies.set('auth_token', data.token, { expires: 7 })
       
+      setSession(JSON.parse(JSON.stringify({
+        user_id: data.user_id,
+        username: data.username,
+        role: data.role,
+        business_id: data.business_id
+      })))
+      
       await refreshSession()
-      router.push('/dashboard')
+      window.location.href = '/dashboard'
     } catch (err: any) {
       setError(err.message || 'Login failed. Please try again.')
     } finally {
