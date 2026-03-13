@@ -30,7 +30,7 @@ def list_clients(
     return [
         {
             "id": row.user_id,
-            "name": f"User {row.user_id[:8]}",
+            "name": f"User {str(row.user_id)[:8]}",
             "lastSeen": row.last_seen.strftime("%Y-%m-%d %H:%M") if row.last_seen else "N/A",
             "convCount": row.conv_count,
             "status": "active",

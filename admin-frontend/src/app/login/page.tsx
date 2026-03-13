@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import Cookies from 'js-cookie'
 import { Bot, Lock, User, AlertCircle } from 'lucide-react'
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000'
+import { api } from '@/lib/api'
 
 export default function LoginPage() {
   const [username, setUsername] = useState('')
@@ -20,18 +20,7 @@ export default function LoginPage() {
     setError('')
 
     try {
-      const res = await fetch(`${API_BASE_URL}/api/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password }),
-      })
-
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}))
-        throw new Error(data.detail || 'Invalid credentials')
-      }
-
-      const data = await res.json()
+      const data = await api.post('/api/auth/login', { username, password })
       Cookies.set('auth_token', data.token, { expires: 7 })
       router.push('/dashboard')
     } catch (err: any) {

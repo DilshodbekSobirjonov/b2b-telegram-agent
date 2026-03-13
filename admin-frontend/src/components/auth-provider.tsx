@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Cookies from 'js-cookie';
+import { api } from '@/lib/api';
 
 export interface Session {
   user_id: number;
@@ -18,8 +19,6 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType>({ session: null, loading: true, logout: () => {} });
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
@@ -37,23 +36,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (pathname !== '/login') router.push('/login');
         return;
       }
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000);
-
+      
       try {
-        const res = await fetch(`${API_BASE_URL}/api/auth/session`, {
-          headers: { Authorization: `Bearer ${token}` },
-          signal: controller.signal,
-        });
-        clearTimeout(timeoutId);
-
-        if (!res.ok) throw new Error('Session invalid');
-
-        const data: Session = await res.json();
+        const data: Session = await api.fetcher('/api/auth/session');
         setSession(data);
       } catch (err: any) {
-        clearTimeout(timeoutId);
-        console.error("Auth check failed:", err.name === 'AbortError' ? 'Timeout' : err.message);
+        console.error("Auth check failed:", err.message);
         Cookies.remove('auth_token');
         setSession(null);
         if (pathname !== '/login') router.push('/login');
@@ -67,12 +55,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);   // Run once on mount only
 
   const logout = async () => {
-    const token = Cookies.get('auth_token');
-    if (token) {
-      await fetch(`${API_BASE_URL}/api/auth/logout`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-      }).catch(() => {});
+    try {
+      await api.post('/api/auth/logout', {});
+    } catch (err) {
+      console.error("Logout request failed", err);
     }
     Cookies.remove('auth_token');
     setSession(null);

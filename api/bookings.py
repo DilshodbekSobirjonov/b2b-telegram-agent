@@ -14,9 +14,8 @@ def serialize_appointment(appt: Appointment, db: Session) -> dict:
     service = db.query(Service).filter(Service.id == appt.service_id).first()
     staff = db.query(Staff).filter(Staff.id == appt.staff_id).first()
     return {
-        "id": appt.id,
-        "clientId": appt.user_id,
-        "clientName": f"Client #{appt.user_id[:8]}",  # Real name would come from CRM
+        "id": appt.user_id,
+        "clientName": f"Client #{str(appt.user_id)[:8]}",  # Real name would come from CRM
         "date": appt.datetime.strftime("%Y-%m-%d") if appt.datetime else None,
         "time": appt.datetime.strftime("%H:%M") if appt.datetime else None,
         "service": service.name if service else "Unknown",

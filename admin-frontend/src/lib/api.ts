@@ -1,6 +1,6 @@
 import Cookies from 'js-cookie';
 
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
+export const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000').replace(/\/$/, '');
 
 export const fetcher = async (endpoint: string, options: RequestInit = {}) => {
   const token = Cookies.get('auth_token');
@@ -10,7 +10,9 @@ export const fetcher = async (endpoint: string, options: RequestInit = {}) => {
   };
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
-  const res = await fetch(`${API_BASE_URL}${endpoint}`, { 
+  const url = endpoint.startsWith('http') ? endpoint : `${API_BASE_URL}${endpoint.startsWith('/') ? '' : '/'}${endpoint}`;
+  
+  const res = await fetch(url, { 
     ...options, 
     headers,
     credentials: 'include' 

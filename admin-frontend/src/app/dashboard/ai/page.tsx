@@ -16,7 +16,7 @@ interface AIProvider {
 }
 
 export default function AISettingsPage() {
-  const { data: providers, isLoading } = useSWR<AIProvider[]>('/api/ai_providers', api.fetcher)
+  const { data: providers, isLoading } = useSWR<AIProvider[]>('/api/ai-providers', api.fetcher)
   const { session } = useAuth()
   const router = useRouter()
   const [loadingId, setLoadingId] = useState<number | null>(null)
@@ -32,8 +32,8 @@ export default function AISettingsPage() {
   const handleToggle = async (provider: AIProvider) => {
     setLoadingId(provider.id)
     try {
-      await api.patch(`/api/ai_providers/${provider.id}`, { is_active: !provider.is_active })
-      mutate('/api/ai_providers')
+      await api.patch(`/api/ai-providers/${provider.id}`, { is_active: !provider.is_active })
+      mutate('/api/ai-providers')
     } finally {
       setLoadingId(null)
     }

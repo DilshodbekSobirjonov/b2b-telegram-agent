@@ -4,15 +4,14 @@ import { useDataFetch } from "@/lib/hooks"
 import { Bot, Power, MessageSquare } from "lucide-react"
 
 export default function BotsPage() {
-  const { data: rawBots, loading } = useDataFetch<any[]>('/api/bots')
-
   // Merge with mock fallback until endpoint is live
-  const bots = rawBots || [
+  const bots = [
     { id: 'b1', name: 'Dental Booking Bot', status: 'online', provider: 'anthropic', messagesProcessed: 1420 },
     { id: 'b2', name: 'Legal FAQ Assistant', status: 'online', provider: 'openai', messagesProcessed: 5600 },
     { id: 'b3', name: 'Auto Repair Scheduler', status: 'offline', provider: 'gemini', messagesProcessed: 320 },
   ]
 
+  const loading = false
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div>
