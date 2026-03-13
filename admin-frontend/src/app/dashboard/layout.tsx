@@ -17,10 +17,11 @@ export default function DashboardLayout({
 
   if (session) {
     lastSession.current = session
-  }
-
-
-
+  }  useEffect(() => {
+    if (!loading && !session) {
+      window.location.href = '/login'
+    }
+  }, [loading, session])
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">

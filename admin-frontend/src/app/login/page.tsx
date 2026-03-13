@@ -13,13 +13,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const { session, loading: authLoading, refreshSession } = useAuth()
-
-  useEffect(() => {
-    if (!authLoading && session) {
-      window.location.href = '/dashboard'
-    }
-  }, [authLoading, session])
+  const router = useRouter()
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
