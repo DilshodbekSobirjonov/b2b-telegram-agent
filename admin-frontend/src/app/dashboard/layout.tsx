@@ -19,11 +19,12 @@ export default function DashboardLayout({
     lastSession.current = session
   }
 
-  useEffect(() => {
-    if (!loading && !session) {
-      router.push('/login')
+  if (!loading && !session) {
+    if (typeof window !== 'undefined') {
+      window.location.href = '/login'
     }
-  }, [loading, session, router])
+    return null
+  }
 
   if (loading) {
     return (

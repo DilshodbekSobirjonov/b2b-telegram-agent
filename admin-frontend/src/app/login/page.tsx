@@ -30,7 +30,7 @@ export default function LoginPage() {
         business_id: data.business_id
       }))
       await refreshSession()
-      router.push('/dashboard')
+      window.location.href = '/dashboard'
     } catch (err: any) {
       setError(err.message || 'Login failed. Please try again.')
     } finally {

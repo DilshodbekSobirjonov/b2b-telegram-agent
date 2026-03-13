@@ -26,8 +26,22 @@ const AuthContext = createContext<AuthContextType>({
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [session, setSession] = useState<Session | null>(() => {
+    if (typeof window === 'undefined') return null;
+    const sessionStr = localStorage.getItem('user_session');
+    try {
+      return sessionStr ? JSON.parse(sessionStr) : null;
+    } catch {
+      return null;
+    }
+  });
+  const [loading, setLoading] = useState(() => {
+    if (typeof window === 'undefined') return true;
+    const token = localStorage.getItem('auth_token');
+    const sessionStr = localStorage.getItem('user_session');
+    // If we have data, we're not "loading" - we're ready
+    return !(token && sessionStr);
+  });
   const router = useRouter();
   const pathname = usePathname();
   const pathnameRef = useRef(pathname);
@@ -64,19 +78,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     refreshSession();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);   // Run once on mount only
+  }, []);
 
-  const logout = async () => {
-    try {
-      await api.post('/api/auth/logout', {});
-    } catch (err) {
-      console.error("Logout request failed", err);
-    }
+  const logout = () => {
     localStorage.removeItem('auth_token');
     localStorage.removeItem('user_session');
     setSession(null);
-    router.push('/login');
+    window.location.href = '/login';
   };
 
   return (

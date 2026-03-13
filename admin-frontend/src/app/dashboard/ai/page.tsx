@@ -94,11 +94,7 @@ export default function AISettingsPage() {
   const [loadingId, setLoadingId] = useState<number | null>(null)
   const [showModal, setShowModal] = useState(false)
 
-  useEffect(() => {
-    if (session && session.role !== 'SUPER_ADMIN') {
-      router.push('/dashboard')
-    }
-  }, [session, router])
+
 
   if (authLoading) return null
   if (!session || session.role !== 'SUPER_ADMIN') return null

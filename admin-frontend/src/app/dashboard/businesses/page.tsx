@@ -141,11 +141,7 @@ export default function BusinessesPage() {
   const [showModal, setShowModal] = useState(false)
   const [actionId, setActionId] = useState<number | null>(null)
 
-  useEffect(() => {
-    if (session && session.role !== 'SUPER_ADMIN') {
-      router.push('/dashboard')
-    }
-  }, [session, router])
+
 
   if (authLoading) return null
   if (!session || session.role !== 'SUPER_ADMIN') return null
