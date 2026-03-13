@@ -25,6 +25,7 @@ from api.businesses import router as businesses_router
 from api.bookings import router as bookings_router
 from api.clients import router as clients_router
 from api.conversations import router as conversations_router
+from api.ai_providers import router as ai_providers_router
 
 # Initialize DB tables
 Base.metadata.create_all(bind=engine)
@@ -60,6 +61,7 @@ app.include_router(businesses_router)
 app.include_router(bookings_router)
 app.include_router(clients_router)
 app.include_router(conversations_router)
+app.include_router(ai_providers_router)
 
 
 @app.get("/")

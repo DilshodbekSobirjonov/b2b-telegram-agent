@@ -32,7 +32,12 @@ class MessageRouter:
         
         # 3. Detect Intent via AI layer if IDLE
         logger.info(f"Detecting intent for user {user_id} with text: {text}")
-        intent = await self.ai.detect_intent(text)
+        
+        # Load business-specific AI engine
+        from ai import load_ai_provider
+        ai_engine = load_ai_provider(getattr(message, "business_id", None)) or self.ai
+        
+        intent = await ai_engine.detect_intent(text)
         logger.info(f"Detected intent: {intent}")
         
         # 4. Route to designated feature
@@ -43,6 +48,15 @@ class MessageRouter:
             feature_class = get_feature("faq")
             
         if feature_class:
+            # FAQ Spam protection: if same user asks FAQ within 5 seconds, ignore or return mini-response
+            import time
+            if intent == "faq" or not get_feature(intent):
+                last_faq = session.get("last_faq_time", 0)
+                if time.time() - last_faq < 5:
+                    logger.warning(f"FAQ Spam detected for user {user_id}. Rate limiting.")
+                    return "..." # Silent or very short response
+                session["last_faq_time"] = time.time()
+
             handler = feature_class()
             response = await handler.handle(message, session)
             return response

@@ -8,7 +8,10 @@ class Business(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, nullable=False)
     telegram_token = Column(String, unique=True, nullable=True)
+    business_connection_id = Column(String, unique=True, nullable=True)
+    ai_provider = Column(String, default="anthropic")
     subscription_status = Column(String, default="active")
+
 
 class Service(Base):
     __tablename__ = 'services'
@@ -88,3 +91,12 @@ class AIUsageLog(Base):
     provider = Column(String)
     tokens_used = Column(Integer)
     timestamp = Column(DateTime)
+
+class AIProvider(Base):
+    __tablename__ = 'ai_providers'
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, unique=True, nullable=False) # e.g., 'anthropic', 'openai'
+    api_key = Column(String, nullable=False)
+    base_url = Column(String, nullable=True)
+    model_name = Column(String, nullable=True) # default model for this provider
+    is_active = Column(Boolean, default=True)

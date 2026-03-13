@@ -27,11 +27,20 @@ class TelegramBotClient:
         # Standard private/group messages
         @self.dp.message()
         async def handle_standard_message(message: Message):
+            # Ignore messages from the bot itself
+            me = await self.bot.get_me()
+            if message.from_user.id == me.id:
+                return
             await gateway_callback(message)
 
         # Telegram Business messages
         @self.dp.business_message()
         async def handle_business_message(message: Message):
+            # Ignore messages from the bot itself
+            me = await self.bot.get_me()
+            if message.from_user.id == me.id:
+                return
+            
             logger.info(f"Business message received from {message.from_user.id} (Connection: {message.business_connection_id})")
             await gateway_callback(message)
 

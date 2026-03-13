@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 
 from database.repository import Repository
-from database.models import Business, Appointment, Subscription, AIUsageLog, Conversation
+from database.models import Business, Appointment, Subscription, AIUsageLog, Conversation, MessageLog
 from api.auth import get_current_user
 from database.admin_users import AdminUser
 
@@ -43,14 +43,23 @@ def get_dashboard_stats(
             .count()
         )
         
-        # Total revenue placeholder (would come from billing in real app)
-        total_revenue = monthly_appointments * 50  # $50 per appointment estimate
+        # Total revenue: $50 per completed appointment
+        total_revenue = (
+            db.query(Appointment)
+            .filter(Appointment.status == "completed")
+            .count()
+        ) * 50
         
+        # AI Efficiency calculation: percentage of messages that are bot-sent
+        total_messages = db.query(MessageLog).count()
+        bot_messages = db.query(MessageLog).filter(MessageLog.sender == "bot").count()
+        ai_efficiency = (bot_messages / total_messages * 100) if total_messages > 0 else 100.0
+
         return {
             "totalRevenue": total_revenue,
             "activeBots": active_bots,
             "appointments": monthly_appointments,
-            "aiEfficiency": 96.5,
+            "aiEfficiency": round(ai_efficiency, 1),
             "totalBusinesses": total_businesses,
             "aiRequestsToday": ai_requests_today,
         }
@@ -61,9 +70,17 @@ def get_dashboard_stats(
         
         today_bookings = (
             db.query(Appointment)
-            .filter(Appointment.business_id == biz_id, Appointment.datetime >= today_start)
+            .filter(
+                Appointment.business_id == biz_id, 
+                Appointment.datetime >= today_start,
+                Appointment.datetime < today_start.replace(hour=23, minute=59)
+            )
             .count()
         )
+        
+        # Free slots: total potential slots (8 hours * 2 slots/hour = 16) - booked today
+        # In a full system this would use Schedule, but for MVP/Stats this is a good approximation
+        free_slots = max(0, 16 - today_bookings)
         
         # Unique clients via conversations
         unique_clients = (
@@ -71,10 +88,31 @@ def get_dashboard_stats(
             .filter(Conversation.business_id == biz_id)
             .scalar() or 0
         )
+
+        # Weekly growth: (this week - last week) / last week * 100
+        last_week_start = today_start - timedelta(days=7)
+        two_weeks_ago_start = last_week_start - timedelta(days=7)
+        
+        this_week_bookings = db.query(Appointment).filter(
+            Appointment.business_id == biz_id,
+            Appointment.datetime >= last_week_start
+        ).count()
+        
+        last_week_bookings = db.query(Appointment).filter(
+            Appointment.business_id == biz_id,
+            Appointment.datetime >= two_weeks_ago_start,
+            Appointment.datetime < last_week_start
+        ).count()
+        
+        weekly_growth = 0.0
+        if last_week_bookings > 0:
+            weekly_growth = ((this_week_bookings - last_week_bookings) / last_week_bookings) * 100
+        elif this_week_bookings > 0:
+            weekly_growth = 100.0
         
         return {
             "todayBookings": today_bookings,
-            "freeSlots": 5,  # Computed from schedule in real implementation
+            "freeSlots": free_slots,
             "totalClients": unique_clients,
-            "weeklyGrowth": 12.4,
+            "weeklyGrowth": round(weekly_growth, 1),
         }

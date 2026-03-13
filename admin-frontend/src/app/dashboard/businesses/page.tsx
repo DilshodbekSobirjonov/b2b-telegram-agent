@@ -17,6 +17,9 @@ interface Business {
 
 function AddBusinessModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
   const [name, setName] = useState("")
+  const [login, setLogin] = useState("")
+  const [password, setPassword] = useState("")
+  const [aiProvider, setAiProvider] = useState("anthropic")
   const [plan, setPlan] = useState("Starter")
   const [token, setToken] = useState("")
   const [loading, setLoading] = useState(false)
@@ -27,7 +30,14 @@ function AddBusinessModal({ onClose, onSuccess }: { onClose: () => void; onSucce
     setLoading(true)
     setError("")
     try {
-      await api.post("/api/businesses", { name, plan, telegram_token: token || undefined })
+      await api.post("/api/businesses", { 
+        name, 
+        login, 
+        password, 
+        ai_provider: aiProvider,
+        plan, 
+        telegram_token: token || undefined 
+      })
       onSuccess()
       onClose()
     } catch (err: any) {
@@ -39,7 +49,7 @@ function AddBusinessModal({ onClose, onSuccess }: { onClose: () => void; onSucce
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-card border border-border rounded-2xl shadow-xl w-full max-w-md p-6 animate-in fade-in zoom-in-95">
+      <div className="bg-card border border-border rounded-2xl shadow-xl w-full max-w-md p-6 animate-in fade-in zoom-in-95 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-bold text-foreground">Add New Business</h2>
           <button onClick={onClose} className="p-2 rounded-lg hover:bg-muted text-muted-foreground">
@@ -57,6 +67,29 @@ function AddBusinessModal({ onClose, onSuccess }: { onClose: () => void; onSucce
             <input value={name} onChange={e => setName(e.target.value)} required
               className="w-full bg-background border border-border rounded-xl py-2.5 px-4 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary text-foreground"
               placeholder="e.g. Acme Dental" />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-sm font-medium text-foreground block mb-1.5">Admin Login *</label>
+              <input value={login} onChange={e => setLogin(e.target.value)} required
+                className="w-full bg-background border border-border rounded-xl py-2.5 px-4 text-sm outline-none focus:border-primary text-foreground"
+                placeholder="biz_admin" />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-foreground block mb-1.5">Admin Password *</label>
+              <input value={password} type="password" onChange={e => setPassword(e.target.value)} required
+                className="w-full bg-background border border-border rounded-xl py-2.5 px-4 text-sm outline-none focus:border-primary text-foreground"
+                placeholder="••••••••" />
+            </div>
+          </div>
+          <div>
+            <label className="text-sm font-medium text-foreground block mb-1.5">AI Provider *</label>
+            <select value={aiProvider} onChange={e => setAiProvider(e.target.value)}
+              className="w-full bg-background border border-border rounded-xl py-2.5 px-4 text-sm outline-none focus:border-primary text-foreground">
+              <option value="anthropic">Anthropic Claude</option>
+              <option value="openai">OpenAI GPT-4</option>
+              <option value="gemini">Google Gemini</option>
+            </select>
           </div>
           <div>
             <label className="text-sm font-medium text-foreground block mb-1.5">Plan</label>
@@ -90,10 +123,24 @@ function AddBusinessModal({ onClose, onSuccess }: { onClose: () => void; onSucce
   )
 }
 
+import { useAuth } from "@/components/auth-provider"
+import { useEffect } from "react"
+import { useRouter } from "next/navigation"
+
 export default function BusinessesPage() {
   const { data: businesses, isLoading, error } = useSWR<Business[]>('/api/businesses', api.fetcher)
+  const { session } = useAuth()
+  const router = useRouter()
   const [showModal, setShowModal] = useState(false)
   const [actionId, setActionId] = useState<number | null>(null)
+
+  useEffect(() => {
+    if (session && session.role !== 'SUPER_ADMIN') {
+      router.push('/dashboard')
+    }
+  }, [session, router])
+
+  if (!session || session.role !== 'SUPER_ADMIN') return null
 
   const handleDisableToggle = async (biz: Business) => {
     setActionId(biz.id)

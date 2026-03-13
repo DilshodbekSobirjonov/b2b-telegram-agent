@@ -47,22 +47,22 @@ export default function DashboardPage() {
             <StatCard
               title="Total Revenue"
               value={loadingStats || !stats ? "..." : `$${(stats.totalRevenue ?? 0).toLocaleString()}`}
-              trend="12.5% this month" trendUp={true} icon={DollarSign}
+              trend="Monthly total" trendUp={true} icon={DollarSign}
             />
             <StatCard
               title="Active Bots"
               value={loadingStats || !stats ? "..." : `${stats.activeBots ?? 0}`}
-              trend="2 new this week" trendUp={true} icon={Bot}
+              trend="Current active" trendUp={true} icon={Bot}
             />
             <StatCard
               title="Total Appointments"
               value={loadingStats || !stats ? "..." : `${stats.appointments ?? 0}`}
-              trend="8.1% vs last week" trendUp={true} icon={CalendarCheck}
+              trend="This month" trendUp={true} icon={CalendarCheck}
             />
             <StatCard
               title="AI Efficiency"
               value={loadingStats || !stats ? "..." : `${stats.aiEfficiency ?? 0}%`}
-              trend="0.4% improvement" trendUp={true} icon={Zap}
+              trend="Bot vs Human" trendUp={true} icon={Zap}
             />
           </>
         ) : (
@@ -70,22 +70,22 @@ export default function DashboardPage() {
             <StatCard
               title="Today's Bookings"
               value={loadingStats || !stats ? "..." : `${stats.todayBookings ?? 0}`}
-              trend="3 confirmed, 5 pending" trendUp={true} icon={CalendarCheck}
+              trend="Today" trendUp={true} icon={CalendarCheck}
             />
             <StatCard
               title="Free Slots Today"
               value={loadingStats || !stats ? "..." : `${stats.freeSlots ?? 0}`}
-              trend="Next slot at 14:00" trendUp={false} icon={Clock}
+              trend="Available now" trendUp={false} icon={Clock}
             />
             <StatCard
               title="Total Clients"
               value={loadingStats || !stats ? "..." : `${stats.totalClients ?? 0}`}
-              trend="+6 this week" trendUp={true} icon={Users}
+              trend="All time" trendUp={true} icon={Users}
             />
             <StatCard
               title="Weekly Growth"
               value={loadingStats || !stats ? "..." : `${stats.weeklyGrowth ?? 0}%`}
-              trend="vs last week" trendUp={true} icon={TrendingUp}
+              trend="vs last week" trendUp={stats?.weeklyGrowth >= 0} icon={TrendingUp}
             />
           </>
         )}

@@ -14,8 +14,11 @@ router = APIRouter(prefix="/api/businesses", tags=["Businesses"])
 
 class BusinessCreate(BaseModel):
     name: str
+    login: str
+    password: str
     plan: str = "Starter"
     telegram_token: Optional[str] = None
+    ai_provider: str = "anthropic"
 
 
 class BusinessUpdate(BaseModel):
@@ -72,14 +75,30 @@ def create_business(
     db: Session = Depends(Repository.get_db),
     current_user: AdminUser = Depends(require_super_admin)
 ):
+    # Check if login already exists
+    from database.admin_users import AdminUser, hash_password
+    existing_user = db.query(AdminUser).filter(AdminUser.username == body.login).first()
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Login already taken")
+
     biz = Business(
         name=body.name,
         telegram_token=body.telegram_token,
+        ai_provider=body.ai_provider,
         subscription_status="active"
     )
     db.add(biz)
     db.flush()
     
+    # Create the AdminUser for this business
+    new_admin = AdminUser(
+        username=body.login,
+        hashed_password=hash_password(body.password),
+        role="BUSINESS_ADMIN",
+        business_id=biz.id
+    )
+    db.add(new_admin)
+
     # Create default subscription
     from database.models import Subscription
     from datetime import datetime, timedelta
@@ -92,7 +111,7 @@ def create_business(
     db.add(sub)
     db.commit()
     db.refresh(biz)
-    return {"id": biz.id, "name": biz.name, "status": biz.subscription_status}
+    return {"id": biz.id, "name": biz.name, "status": biz.subscription_status, "admin_user": body.login}
 
 
 @router.patch("/{business_id}")
