@@ -17,18 +17,10 @@ export const fetcher = async (endpoint: string, options: RequestInit = {}) => {
   
   const res = await fetch(url, { 
     ...options, 
-    headers,
-    credentials: 'include' 
+    headers
   });
 
   if (!res.ok) {
-    if (res.status === 401 && typeof window !== 'undefined') {
-      localStorage.removeItem('auth_token');
-      localStorage.removeItem('user_session');
-      if (window.location.pathname !== '/login') {
-        window.location.href = '/login';
-      }
-    }
 
     const info = await res.json().catch(() => ({}));
     console.error(`API Error [${res.status}]:`, info);
