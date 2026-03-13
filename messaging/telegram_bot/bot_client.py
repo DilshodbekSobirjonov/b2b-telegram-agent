@@ -22,11 +22,25 @@ class TelegramBotClient:
             logger.error(f"Failed to send message to {user_id}: {e}")
 
     def register_handlers(self, gateway_callback):
-        """Registers the main message handler to route all incoming messages to the Gateway."""
+        """Registers handlers to route incoming standard and business updates to the Gateway."""
+        
+        # Standard private/group messages
         @self.dp.message()
-        async def handle_all_messages(message: Message):
-            # Pass the raw aiogram Message object (or a normalized dict) to the gateway
+        async def handle_standard_message(message: Message):
             await gateway_callback(message)
+
+        # Telegram Business messages
+        @self.dp.business_message()
+        async def handle_business_message(message: Message):
+            logger.info(f"Business message received from {message.from_user.id} (Connection: {message.business_connection_id})")
+            await gateway_callback(message)
+
+        # Telegram Business connection updates
+        @self.dp.business_connection()
+        async def handle_business_connection(connection: types.BusinessConnection):
+            logger.info(f"Business connection update: {connection.id} is now {'enabled' if connection.is_enabled else 'disabled'}")
+            # Optionally pass this to gateway if persistence is needed
+
             
     async def start_polling(self):
         """Starts the aiogram dispatcher polling."""

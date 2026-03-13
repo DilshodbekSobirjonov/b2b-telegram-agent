@@ -41,13 +41,15 @@ async def main():
 
     # 4. Setup Messaging Clients
     tp_bot = TelegramBotClient(os.getenv("TELEGRAM_TOKEN"))
-    tp_biz = TelegramBusinessClient(os.getenv("TELEGRAM_TOKEN"))
+    tp_biz = TelegramBusinessClient()
+    tp_biz.set_bot(tp_bot.bot)
 
     # 5. Connect Gateway
     gateway = MessagingGateway(bot_client=tp_bot, business_client=tp_biz, router=router)
     
-    # Register the bot handlers pointing to the gateway
+    # Register the bot handlers pointing to the gateway (handled standard + business updates)
     tp_bot.register_handlers(gateway.handle_incoming)
+
 
     logger.info("Agent initialized and ready. Starting live Telegram polling...")
     
