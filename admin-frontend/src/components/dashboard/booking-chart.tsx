@@ -20,8 +20,8 @@ export function BookingChart({ data }: BookingChartProps) {
   return (
     <div className="bg-card border border-border rounded-xl p-6 shadow-sm flex flex-col h-96">
       <h3 className="text-lg font-semibold text-foreground mb-4">Weekly Bookings Activity</h3>
-      <div className="flex-1 w-full min-h-0">
-        <ResponsiveContainer width="100%" height="100%">
+      <div className="flex-1 w-full" style={{ height: '300px' }}>
+        <ResponsiveContainer width="100%" height={300}>
           <AreaChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
             <defs>
               <linearGradient id="colorBookings" x1="0" y1="0" x2="0" y2="1">
