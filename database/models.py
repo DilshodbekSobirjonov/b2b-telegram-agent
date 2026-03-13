@@ -11,6 +11,8 @@ class Business(Base):
     business_connection_id = Column(String, unique=True, nullable=True)
     ai_provider = Column(String, default="anthropic")
     subscription_status = Column(String, default="active")
+    working_hours = Column(String, default="09:00-18:00")
+    timezone = Column(String, default="UTC")
 
 
 class Service(Base):

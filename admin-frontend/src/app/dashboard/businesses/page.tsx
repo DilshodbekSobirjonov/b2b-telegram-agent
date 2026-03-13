@@ -21,6 +21,8 @@ function AddBusinessModal({ onClose, onSuccess }: { onClose: () => void; onSucce
   const [password, setPassword] = useState("")
   const [aiProvider, setAiProvider] = useState("anthropic")
   const [token, setToken] = useState("")
+  const [workingHours, setWorkingHours] = useState("09:00-18:00")
+  const [timezone, setTimezone] = useState("UTC")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
 
@@ -34,7 +36,9 @@ function AddBusinessModal({ onClose, onSuccess }: { onClose: () => void; onSucce
         login, 
         password, 
         ai_provider: aiProvider,
-        telegram_token: token
+        telegram_token: token,
+        working_hours: workingHours,
+        timezone: timezone
       })
       onSuccess()
       onClose()
@@ -94,6 +98,20 @@ function AddBusinessModal({ onClose, onSuccess }: { onClose: () => void; onSucce
             <input value={token} onChange={e => setToken(e.target.value)} required
               className="w-full bg-background border border-border rounded-xl py-2.5 px-4 text-sm outline-none focus:border-primary text-foreground font-mono"
               placeholder="7123456789:AAF..." />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-sm font-medium text-foreground block mb-1.5">Working Hours *</label>
+              <input value={workingHours} onChange={e => setWorkingHours(e.target.value)} required
+                className="w-full bg-background border border-border rounded-xl py-2.5 px-4 text-sm outline-none focus:border-primary text-foreground"
+                placeholder="09:00-18:00" />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-foreground block mb-1.5">Timezone *</label>
+              <input value={timezone} onChange={e => setTimezone(e.target.value)} required
+                className="w-full bg-background border border-border rounded-xl py-2.5 px-4 text-sm outline-none focus:border-primary text-foreground"
+                placeholder="UTC" />
+            </div>
           </div>
           <div className="pt-2 flex gap-3">
             <button type="button" onClick={onClose}

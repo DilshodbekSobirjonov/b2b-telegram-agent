@@ -19,6 +19,8 @@ class BusinessCreate(BaseModel):
     plan: str = "Starter"
     telegram_token: str
     ai_provider: str = "anthropic"
+    working_hours: str
+    timezone: str
 
 
 class BusinessUpdate(BaseModel):
@@ -83,6 +85,10 @@ def create_business(
         raise HTTPException(status_code=400, detail="Admin password is required")
     if not body.telegram_token.strip():
         raise HTTPException(status_code=400, detail="Telegram bot token is required")
+    if not body.working_hours.strip():
+        raise HTTPException(status_code=400, detail="Working hours are required")
+    if not body.timezone.strip():
+        raise HTTPException(status_code=400, detail="Timezone is required")
 
     # Check if login already exists
     from database.admin_users import AdminUser, hash_password
@@ -94,7 +100,9 @@ def create_business(
         name=body.name,
         telegram_token=body.telegram_token,
         ai_provider=body.ai_provider,
-        subscription_status="active"
+        subscription_status="active",
+        working_hours=body.working_hours,
+        timezone=body.timezone
     )
     db.add(biz)
     db.flush()

@@ -10,7 +10,7 @@ class MessagingGateway:
         self.business_client = business_client
         self.router = router
 
-    async def handle_incoming(self, message):
+    async def handle_incoming(self, message, bot_token: str):
         """Determines transport and passes standard message to the Router."""
         user_id = str(message.from_user.id)
         connection_id = getattr(message, "business_connection_id", None)
@@ -26,10 +26,8 @@ class MessagingGateway:
             if biz:
                 business_id = biz.id
         else:
-            # Fallback for standard bot: find business by bot token
-            # We can get the bot token from self.bot_client.token
-            token = self.bot_client.token
-            biz = db.query(Business).filter(Business.telegram_token == token).first()
+            # Fallback for standard bot: find business by bot token that received this message
+            biz = db.query(Business).filter(Business.telegram_token == bot_token).first()
             if biz:
                 business_id = biz.id
 
@@ -61,5 +59,5 @@ class MessagingGateway:
                 normalized.business_connection_id
             )
         else:
-            await self.bot_client.send_message(normalized.user_id, response_text)
+            await self.bot_client.send_message(bot_token, normalized.user_id, response_text)
 

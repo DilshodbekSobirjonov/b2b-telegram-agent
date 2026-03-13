@@ -10,6 +10,8 @@ from messaging.telegram_bot.bot_client import TelegramBotClient
 from messaging.telegram_business.business_client import TelegramBusinessClient
 from ai import load_ai_provider
 from database.repository import Repository
+from database.models import Business
+from aiogram import Bot
 
 # Features
 from features.booking.handler import BookingHandler
@@ -27,42 +29,49 @@ async def main():
     # Init DB
     Repository.init_db()
 
-    # 1. Register Features dynamically
+    # 1. Load AI Provider first
+    logger.info("Loading AI Provider...")
+    ai_engine = load_ai_provider()
+
+    # 2. Register Features dynamically
     logger.info("Registering features...")
     register_feature("booking", BookingHandler)
     register_feature("crm", CRMHandler)
-    register_feature("faq", FAQHandler)
-
-    # 2. Load AI Provider
-    ai_engine = load_ai_provider()
+    register_feature("faq", FAQHandler(ai_engine=ai_engine))
 
     # 3. Setup Core Router
     router = MessageRouter(ai_engine=ai_engine)
 
-    # 4. Setup Messaging Clients conditionally
-    token = os.getenv("TELEGRAM_TOKEN")
-    if token:
-        logger.info("Starting Telegram Bot routing structure...")
-        tp_bot = TelegramBotClient(token)
+    # 4. Setup Messaging Clients dynamically from DB
+    db = next(Repository.get_db())
+    businesses = db.query(Business).filter(Business.telegram_token.isnot(None)).all()
+    
+    unique_tokens = list(set([b.telegram_token for b in businesses if b.telegram_token.strip()]))
+    
+    if unique_tokens:
+        logger.info(f"Starting Telegram Routing for {len(unique_tokens)} unique bots...")
+        bot_instances = [Bot(token=t) for t in unique_tokens]
+        
+        tp_bot = TelegramBotClient(bots=bot_instances)
         tp_biz = TelegramBusinessClient()
-        tp_biz.set_bot(tp_bot.bot)
+        tp_biz.set_bot(bot_instances[0]) # For business logic we just need one valid bot instance for API calls
 
         # 5. Connect Gateway
         gateway = MessagingGateway(bot_client=tp_bot, business_client=tp_biz, router=router)
         
-        # Register the bot handlers pointing to the gateway (handled standard + business updates)
+        # Register the bot handlers pointing to the gateway (handles standard + business updates)
         tp_bot.register_handlers(gateway.handle_incoming)
 
-        logger.info("Agent initialized and ready. Starting live Telegram polling...")
+        logger.info("Agent initialized and ready. Starting live Telegram polling across all bots...")
         
         # Start actual aiogram polling
         await tp_bot.start_polling()
     else:
         logger.warning(
             "######################################################################\n"
-            "TELEGRAM_TOKEN is missing or empty! \n"
-            "The backend will run, but the Telegram Bot will NOT start.\n"
-            "This is expected in local UI-only mode without a valid .env configuration.\n"
+            "No Telegram Bots found in the database! \n"
+            "The backend will run, but no Telegram polling will start.\n"
+            "Add a business with a Telegram Token via the Admin Panel to enable this.\n"
             "######################################################################"
         )
         # Keep process alive silently for Docker/runner without crashing

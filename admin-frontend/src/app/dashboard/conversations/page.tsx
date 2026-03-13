@@ -1,8 +1,16 @@
 "use client"
 
-import { Search, Bot, User, Archive } from "lucide-react"
+import { useState } from "react"
+import { Search, Bot, User, Archive, MessageSquare } from "lucide-react"
+import { useDataFetch } from "@/lib/hooks"
 
 export default function ConversationsPage() {
+  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const { data: convs, loading: loadingConvs } = useDataFetch<any[]>('/api/conversations')
+  const { data: detail, loading: loadingDetail } = useDataFetch<any>(selectedId ? `/api/conversations/${selectedId}/messages` : null)
+
+  const activeConv = convs?.find(c => c.id === selectedId)
+
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 h-full flex flex-col">
       <div>
@@ -15,7 +23,7 @@ export default function ConversationsPage() {
           <Search className="w-4 h-4 text-muted-foreground mr-3" />
           <input 
             type="text" 
-            placeholder="Search by client name, ID, or phone..." 
+            placeholder="Search by client ID..." 
             className="bg-transparent border-none outline-none text-sm w-full text-foreground placeholder:text-muted-foreground"
           />
         </div>
@@ -29,62 +37,78 @@ export default function ConversationsPage() {
             <Archive className="w-4 h-4 text-primary" /> Transcripts
           </div>
           <div className="flex-1 overflow-y-auto p-2 space-y-1">
-            {[1, 2, 3].map(i => (
-              <div key={i} className={`p-4 rounded-xl cursor-pointer border ${i === 1 ? 'border-primary bg-primary/5' : 'border-transparent hover:bg-muted/50'} transition-colors`}>
-                <h4 className="font-semibold text-foreground text-sm">Alice Smith</h4>
-                <p className="text-xs text-muted-foreground mt-1">Today at 14:05 • Booking Intent</p>
+            {loadingConvs ? (
+              <div className="flex justify-center p-8">
+                <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
               </div>
-            ))}
+            ) : convs && convs.length > 0 ? (
+              convs.map(c => (
+                <div 
+                  key={c.id} 
+                  onClick={() => setSelectedId(c.id)}
+                  className={`p-4 rounded-xl cursor-pointer border ${selectedId === c.id ? 'border-primary bg-primary/5' : 'border-transparent hover:bg-muted/50'} transition-colors`}
+                >
+                  <h4 className="font-semibold text-foreground text-sm">Client {c.userId}</h4>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {new Date(c.startTime).toLocaleString()}
+                  </p>
+                </div>
+              ))
+            ) : (
+              <p className="text-center text-sm text-muted-foreground p-8">No conversations found.</p>
+            )}
           </div>
         </div>
 
         {/* Conversation View */}
         <div className="lg:col-span-2 bg-card border border-border rounded-xl shadow-sm flex flex-col overflow-hidden relative">
-          
-          <div className="p-4 border-b border-border bg-muted/30">
-            <h3 className="font-semibold text-foreground">Detailed Transcript: Alice Smith</h3>
-            <p className="text-xs text-muted-foreground mt-1">AI Summary: Client successfully booked a consultation for May 1st at 14:00.</p>
-          </div>
-
-          <div className="flex-1 p-6 overflow-y-auto space-y-6">
-            
-            <div className="flex justify-end gap-3">
-              <div className="bg-primary text-primary-foreground px-4 py-3 rounded-2xl rounded-tr-sm text-sm shadow-sm max-w-[80%]">
-                I would like to book an appointment please.
-              </div>
-              <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center shrink-0">
-                <User className="w-4 h-4 text-muted-foreground" />
-              </div>
+          {!selectedId ? (
+            <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground space-y-4">
+              <MessageSquare className="w-12 h-12 opacity-20" />
+              <p>Select a conversation to view transcript</p>
             </div>
-
-            <div className="flex gap-3">
-              <div className="w-8 h-8 rounded-full bg-gradient-primary flex items-center justify-center shrink-0 shadow-sm">
-                <Bot className="w-4 h-4 text-white" />
-              </div>
-              <div className="bg-muted text-foreground px-4 py-3 rounded-2xl rounded-tl-sm text-sm shadow-sm max-w-[80%] border border-border">
-                Вы записаны:<br/><br/>Дата: 2024-05-01<br/>Время: 14:00<br/><br/>Подтвердить?
-              </div>
+          ) : loadingDetail ? (
+            <div className="flex-1 flex items-center justify-center">
+              <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
             </div>
+          ) : detail ? (
+            <>
+              <div className="p-4 border-b border-border bg-muted/30">
+                <h3 className="font-semibold text-foreground">Transcript: Client {detail.userId}</h3>
+                <p className="text-xs text-muted-foreground mt-1">{detail.summary}</p>
+              </div>
 
-            <div className="flex justify-end gap-3">
-              <div className="bg-primary text-primary-foreground px-4 py-3 rounded-2xl rounded-tr-sm text-sm shadow-sm max-w-[80%]">
-                Да
+              <div className="flex-1 p-6 overflow-y-auto space-y-6">
+                {detail.messages?.map((msg: any, idx: number) => (
+                  <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} gap-3`}>
+                    {msg.role !== 'user' && (
+                      <div className="w-8 h-8 rounded-full bg-gradient-primary flex items-center justify-center shrink-0 shadow-sm">
+                        <Bot className="w-4 h-4 text-white" />
+                      </div>
+                    )}
+                    <div className={`
+                      px-4 py-3 rounded-2xl text-sm shadow-sm max-w-[80%] border
+                      ${msg.role === 'user' 
+                        ? 'bg-primary text-primary-foreground border-transparent rounded-tr-sm' 
+                        : 'bg-muted text-foreground border-border rounded-tl-sm'}
+                    `}>
+                      {msg.text}
+                      <span className="block text-[10px] opacity-50 mt-1 uppercase font-bold">{msg.time}</span>
+                    </div>
+                    {msg.role === 'user' && (
+                      <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center shrink-0">
+                        <User className="w-4 h-4 text-muted-foreground" />
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
-              <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center shrink-0">
-                <User className="w-4 h-4 text-muted-foreground" />
-              </div>
+            </>
+          ) : (
+            <div className="flex-1 flex items-center justify-center">
+              <p className="text-muted-foreground">Could not load transcript</p>
             </div>
-
-            <div className="flex gap-3">
-              <div className="w-8 h-8 rounded-full bg-gradient-primary flex items-center justify-center shrink-0 shadow-sm">
-                <Bot className="w-4 h-4 text-white" />
-              </div>
-              <div className="bg-muted text-foreground px-4 py-3 rounded-2xl rounded-tl-sm text-sm shadow-sm max-w-[80%] border border-border">
-                Отлично! Ваша запись подтверждена.
-              </div>
-            </div>
-
-          </div>
+          )}
         </div>
       </div>
     </div>
