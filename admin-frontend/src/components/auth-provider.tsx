@@ -2,7 +2,6 @@
 
 import { createContext, useContext, useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import Cookies from 'js-cookie';
 import { api } from '@/lib/api';
 
 export interface Session {
@@ -16,9 +15,15 @@ interface AuthContextType {
   session: Session | null;
   loading: boolean;
   logout: () => void;
+  refreshSession: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType>({ session: null, loading: true, logout: () => {} });
+const AuthContext = createContext<AuthContextType>({ 
+  session: null, 
+  loading: true, 
+  logout: () => {},
+  refreshSession: async () => {} 
+});
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
@@ -26,31 +31,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
 
+  const refreshSession = async () => {
+    if (typeof window === 'undefined') return;
+
+    const token = localStorage.getItem('auth_token');
+    const sessionStr = localStorage.getItem('user_session');
+
+    if (!token || !sessionStr) {
+      setSession(null);
+      setLoading(false);
+      if (pathname !== '/login') router.push('/login');
+      return;
+    }
+    
+    try {
+      setSession(JSON.parse(sessionStr));
+    } catch (err) {
+      console.error("Failed to parse user session", err);
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('user_session');
+      setSession(null);
+      if (pathname !== '/login') router.push('/login');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const checkAuth = async () => {
-      const token = Cookies.get('auth_token');
-
-      if (!token) {
-        setSession(null);
-        setLoading(false);
-        if (pathname !== '/login') router.push('/login');
-        return;
-      }
-      
-      try {
-        const data: Session = await api.fetcher('/api/auth/session');
-        setSession(data);
-      } catch (err: any) {
-        console.error("Auth check failed:", err.message);
-        Cookies.remove('auth_token');
-        setSession(null);
-        if (pathname !== '/login') router.push('/login');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    checkAuth();
+    refreshSession();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);   // Run once on mount only
 
@@ -60,13 +68,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (err) {
       console.error("Logout request failed", err);
     }
-    Cookies.remove('auth_token');
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('user_session');
     setSession(null);
     router.push('/login');
   };
 
   return (
-    <AuthContext.Provider value={{ session, loading, logout }}>
+    <AuthContext.Provider value={{ session, loading, logout, refreshSession }}>
       {children}
     </AuthContext.Provider>
   );

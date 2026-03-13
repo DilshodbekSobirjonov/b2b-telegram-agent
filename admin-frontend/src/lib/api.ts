@@ -1,9 +1,12 @@
-import Cookies from 'js-cookie';
+// Removed js-cookie
 
 export const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000').replace(/\/$/, '');
 
 export const fetcher = async (endpoint: string, options: RequestInit = {}) => {
-  const token = Cookies.get('auth_token');
+  let token = null;
+  if (typeof window !== 'undefined') {
+    token = localStorage.getItem('auth_token');
+  }
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...(options.headers as Record<string, string>),
@@ -19,6 +22,14 @@ export const fetcher = async (endpoint: string, options: RequestInit = {}) => {
   });
 
   if (!res.ok) {
+    if (res.status === 401 && typeof window !== 'undefined') {
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('user_session');
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login';
+      }
+    }
+
     const info = await res.json().catch(() => ({}));
     console.error(`API Error [${res.status}]:`, info);
     const error: any = new Error(info.detail || 'API request failed');

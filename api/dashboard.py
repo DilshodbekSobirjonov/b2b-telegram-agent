@@ -123,13 +123,18 @@ def get_dashboard_chart(
     db: Session = Depends(Repository.get_db),
     current_user: AdminUser = Depends(get_current_user)
 ):
-    # Dummy chart data: Daily bookings for the last 7 days
     data = []
     today = date.today()
     for i in range(6, -1, -1):
         day = today - timedelta(days=i)
-        data.append({
-            "date": day.strftime("%Y-%m-%d"),
-            "bookings": 5 + (i % 3) * 2  # Mock variability
-        })
+        day_start = datetime.combine(day, datetime.min.time())
+        day_end = datetime.combine(day, datetime.max.time())
+        q = db.query(Appointment).filter(
+            Appointment.datetime >= day_start,
+            Appointment.datetime <= day_end
+        )
+        if current_user.role == "BUSINESS_ADMIN":
+            q = q.filter(Appointment.business_id == current_user.business_id)
+        count = q.count()
+        data.append({"date": day.strftime("%Y-%m-%d"), "bookings": count})
     return data

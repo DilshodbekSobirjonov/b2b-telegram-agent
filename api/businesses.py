@@ -17,7 +17,7 @@ class BusinessCreate(BaseModel):
     login: str
     password: str
     plan: str = "Starter"
-    telegram_token: Optional[str] = None
+    telegram_token: str
     ai_provider: str = "anthropic"
 
 

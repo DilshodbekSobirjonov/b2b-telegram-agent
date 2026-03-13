@@ -1,6 +1,5 @@
 "use client"
 
-import { useDataFetch } from "@/lib/hooks"
 import { Bot, Power, MessageSquare } from "lucide-react"
 
 export default function BotsPage() {

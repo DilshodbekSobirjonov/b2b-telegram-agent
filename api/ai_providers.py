@@ -11,11 +11,22 @@ from database.admin_users import AdminUser
 router = APIRouter(prefix="/api/ai-providers", tags=["AI Providers"])
 
 class AIProviderSchema(BaseModel):
+    id: Optional[int] = None
     name: str
     api_key: str
     base_url: Optional[str] = None
     model_name: Optional[str] = None
     is_active: bool = True
+
+    class Config:
+        from_attributes = True
+
+class AIProviderPatch(BaseModel):
+    name: Optional[str] = None
+    api_key: Optional[str] = None
+    base_url: Optional[str] = None
+    model_name: Optional[str] = None
+    is_active: Optional[bool] = None
 
 def require_super_admin(current_user: AdminUser = Depends(get_current_user)):
     if current_user.role != "SUPER_ADMIN":
@@ -43,7 +54,7 @@ def create_provider(
 @router.patch("/{provider_id}")
 def update_provider(
     provider_id: int,
-    body: AIProviderSchema,
+    body: AIProviderPatch,
     db: Session = Depends(Repository.get_db),
     current_user: AdminUser = Depends(require_super_admin)
 ):

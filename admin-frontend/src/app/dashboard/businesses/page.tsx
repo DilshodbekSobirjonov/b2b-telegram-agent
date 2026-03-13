@@ -20,7 +20,6 @@ function AddBusinessModal({ onClose, onSuccess }: { onClose: () => void; onSucce
   const [login, setLogin] = useState("")
   const [password, setPassword] = useState("")
   const [aiProvider, setAiProvider] = useState("anthropic")
-  const [plan, setPlan] = useState("Starter")
   const [token, setToken] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
@@ -35,8 +34,7 @@ function AddBusinessModal({ onClose, onSuccess }: { onClose: () => void; onSucce
         login, 
         password, 
         ai_provider: aiProvider,
-        plan, 
-        telegram_token: token || undefined 
+        telegram_token: token
       })
       onSuccess()
       onClose()
@@ -92,17 +90,8 @@ function AddBusinessModal({ onClose, onSuccess }: { onClose: () => void; onSucce
             </select>
           </div>
           <div>
-            <label className="text-sm font-medium text-foreground block mb-1.5">Plan</label>
-            <select value={plan} onChange={e => setPlan(e.target.value)}
-              className="w-full bg-background border border-border rounded-xl py-2.5 px-4 text-sm outline-none focus:border-primary text-foreground">
-              <option value="Starter">Starter</option>
-              <option value="Pro">Pro</option>
-              <option value="Enterprise">Enterprise</option>
-            </select>
-          </div>
-          <div>
-            <label className="text-sm font-medium text-foreground block mb-1.5">Telegram Bot Token (optional)</label>
-            <input value={token} onChange={e => setToken(e.target.value)}
+            <label className="text-sm font-medium text-foreground block mb-1.5">Telegram Bot Token *</label>
+            <input value={token} onChange={e => setToken(e.target.value)} required
               className="w-full bg-background border border-border rounded-xl py-2.5 px-4 text-sm outline-none focus:border-primary text-foreground font-mono"
               placeholder="7123456789:AAF..." />
           </div>

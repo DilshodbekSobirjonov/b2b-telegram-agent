@@ -1,6 +1,6 @@
 "use client"
 
-import { Cpu, Key, Activity, DollarSign, Plus, Loader2 } from "lucide-react"
+import { Cpu, Key, Activity, DollarSign, Plus, Loader2, X, AlertCircle } from "lucide-react"
 import useSWR, { mutate } from "swr"
 import { api } from "@/lib/api"
 import { useAuth } from "@/components/auth-provider"
@@ -15,11 +15,84 @@ interface AIProvider {
   is_active: boolean
 }
 
+function AddProviderModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
+  const [name, setName] = useState("")
+  const [apiKey, setApiKey] = useState("")
+  const [modelName, setModelName] = useState("")
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState("")
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+    setError("")
+    try {
+      await api.post("/api/ai-providers", { name, api_key: apiKey, model_name: modelName, is_active: true })
+      onSuccess()
+      onClose()
+    } catch (err: any) {
+      setError(err.message || "Failed to create provider")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="bg-card border border-border rounded-2xl shadow-xl w-full max-w-md p-6 animate-in fade-in zoom-in-95">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-bold text-foreground">Add AI Provider</h2>
+          <button onClick={onClose} className="p-2 rounded-lg hover:bg-muted text-muted-foreground">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+        {error && (
+          <div className="bg-rose-500/10 text-rose-500 text-sm p-3 rounded-lg mb-4 border border-rose-500/20 flex items-center gap-2">
+            <AlertCircle className="w-4 h-4" /> {error}
+          </div>
+        )}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="text-sm font-medium text-foreground block mb-1.5">Provider Name *</label>
+            <input value={name} onChange={e => setName(e.target.value)} required
+              className="w-full bg-background border border-border rounded-xl py-2.5 px-4 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary text-foreground"
+              placeholder="e.g. Anthropic Claude" />
+          </div>
+          <div>
+            <label className="text-sm font-medium text-foreground block mb-1.5">API Key *</label>
+            <input value={apiKey} onChange={e => setApiKey(e.target.value)} required type="password"
+              className="w-full bg-background border border-border rounded-xl py-2.5 px-4 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary text-foreground font-mono"
+              placeholder="sk-ant-..." />
+          </div>
+          <div>
+            <label className="text-sm font-medium text-foreground block mb-1.5">Model Name</label>
+            <input value={modelName} onChange={e => setModelName(e.target.value)}
+              className="w-full bg-background border border-border rounded-xl py-2.5 px-4 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary text-foreground"
+              placeholder="e.g. claude-3-5-sonnet" />
+          </div>
+          <div className="pt-2 flex gap-3">
+            <button type="button" onClick={onClose}
+              className="flex-1 py-2.5 rounded-xl border border-border text-muted-foreground hover:bg-muted text-sm font-medium transition-colors">
+              Cancel
+            </button>
+            <button type="submit" disabled={loading}
+              className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-500 text-white text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2">
+              {loading && <Loader2 className="w-4 h-4 animate-spin" />}
+              {loading ? "Adding..." : "Add Provider"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
 export default function AISettingsPage() {
   const { data: providers, isLoading } = useSWR<AIProvider[]>('/api/ai-providers', api.fetcher)
   const { session } = useAuth()
   const router = useRouter()
   const [loadingId, setLoadingId] = useState<number | null>(null)
+  const [showModal, setShowModal] = useState(false)
 
   useEffect(() => {
     if (session && session.role !== 'SUPER_ADMIN') {
@@ -41,12 +114,19 @@ export default function AISettingsPage() {
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      {showModal && (
+        <AddProviderModal
+          onClose={() => setShowModal(false)}
+          onSuccess={() => mutate('/api/ai-providers')}
+        />
+      )}
       <div className="flex justify-between items-end">
         <div>
           <h1 className="text-3xl font-bold text-foreground">AI Engine Configuration</h1>
           <p className="text-muted-foreground">Manage Large Language Model providers, API keys, and routing limits.</p>
         </div>
-        <button className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity">
+        <button className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity"
+          onClick={() => setShowModal(true)}>
           <Plus className="w-4 h-4" /> Add Provider
         </button>
       </div>
@@ -54,6 +134,15 @@ export default function AISettingsPage() {
       {isLoading ? (
         <div className="flex items-center justify-center p-20">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      ) : !providers || providers.length === 0 ? (
+        <div className="flex flex-col items-center justify-center p-20 gap-4 text-muted-foreground">
+          <Cpu className="w-12 h-12 opacity-30" />
+          <p className="text-sm">No AI providers configured yet.</p>
+          <button onClick={() => setShowModal(true)}
+            className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity">
+            <Plus className="w-4 h-4" /> Add your first provider
+          </button>
         </div>
       ) : (
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">

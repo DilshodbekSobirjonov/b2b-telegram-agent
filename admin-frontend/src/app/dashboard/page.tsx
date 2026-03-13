@@ -8,24 +8,12 @@ import { useDataFetch } from "@/lib/hooks"
 import { useAuth } from "@/components/auth-provider"
 
 export default function DashboardPage() {
-  const { session, loading: authLoading } = useAuth()
+  const { session } = useAuth()
   const isSuperAdmin = session?.role === 'SUPER_ADMIN'
 
   const { data: stats, loading: loadingStats } = useDataFetch<any>('/api/dashboard/stats')
   const { data: chartData, loading: loadingChart } = useDataFetch<any[]>('/api/dashboard/chart')
   const { data: recent, loading: loadingRecent } = useDataFetch<any[]>('/api/bookings/recent')
-
-  // Show skeleton while auth determines role to prevent flash of wrong content
-  if (authLoading) {
-    return (
-      <div className="space-y-8 animate-pulse">
-        <div className="h-10 w-64 bg-muted rounded-xl" />
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {[...Array(4)].map((_, i) => <div key={i} className="h-32 bg-card border border-border rounded-xl" />)}
-        </div>
-      </div>
-    )
-  }
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -46,22 +34,22 @@ export default function DashboardPage() {
           <>
             <StatCard
               title="Total Revenue"
-              value={loadingStats || !stats ? "..." : `$${(stats.totalRevenue ?? 0).toLocaleString()}`}
+              value={loadingStats ? "..." : `$${(stats?.totalRevenue ?? 0).toLocaleString()}`}
               trend="Monthly total" trendUp={true} icon={DollarSign}
             />
             <StatCard
               title="Active Bots"
-              value={loadingStats || !stats ? "..." : `${stats.activeBots ?? 0}`}
+              value={loadingStats ? "..." : `${stats?.activeBots ?? 0}`}
               trend="Current active" trendUp={true} icon={Bot}
             />
             <StatCard
               title="Total Appointments"
-              value={loadingStats || !stats ? "..." : `${stats.appointments ?? 0}`}
+              value={loadingStats ? "..." : `${stats?.appointments ?? 0}`}
               trend="This month" trendUp={true} icon={CalendarCheck}
             />
             <StatCard
               title="AI Efficiency"
-              value={loadingStats || !stats ? "..." : `${stats.aiEfficiency ?? 0}%`}
+              value={loadingStats ? "..." : `${stats?.aiEfficiency ?? 0}%`}
               trend="Bot vs Human" trendUp={true} icon={Zap}
             />
           </>
@@ -69,23 +57,23 @@ export default function DashboardPage() {
           <>
             <StatCard
               title="Today's Bookings"
-              value={loadingStats || !stats ? "..." : `${stats.todayBookings ?? 0}`}
+              value={loadingStats ? "..." : `${stats?.todayBookings ?? 0}`}
               trend="Today" trendUp={true} icon={CalendarCheck}
             />
             <StatCard
               title="Free Slots Today"
-              value={loadingStats || !stats ? "..." : `${stats.freeSlots ?? 0}`}
+              value={loadingStats ? "..." : `${stats?.freeSlots ?? 0}`}
               trend="Available now" trendUp={false} icon={Clock}
             />
             <StatCard
               title="Total Clients"
-              value={loadingStats || !stats ? "..." : `${stats.totalClients ?? 0}`}
+              value={loadingStats ? "..." : `${stats?.totalClients ?? 0}`}
               trend="All time" trendUp={true} icon={Users}
             />
             <StatCard
               title="Weekly Growth"
-              value={loadingStats || !stats ? "..." : `${stats.weeklyGrowth ?? 0}%`}
-              trend="vs last week" trendUp={stats?.weeklyGrowth >= 0} icon={TrendingUp}
+              value={loadingStats ? "..." : `${stats?.weeklyGrowth ?? 0}%`}
+              trend="vs last week" trendUp={(stats?.weeklyGrowth ?? 0) >= 0} icon={TrendingUp}
             />
           </>
         )}
@@ -93,27 +81,29 @@ export default function DashboardPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
-          {loadingChart || !chartData ? (
+          {loadingChart ? (
             <div className="bg-card border border-border rounded-xl h-80 flex items-center justify-center shadow-sm">
-              <div className="flex flex-col items-center gap-3 text-muted-foreground">
-                <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                <p className="text-sm">Loading chart data...</p>
-              </div>
+              <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
             </div>
-          ) : (
+          ) : chartData && chartData.length > 0 ? (
             <BookingChart data={chartData} />
+          ) : (
+            <div className="bg-card border border-border rounded-xl h-80 flex items-center justify-center shadow-sm">
+              <p className="text-sm text-muted-foreground">No booking data yet.</p>
+            </div>
           )}
         </div>
         <div className="lg:col-span-1">
-          {loadingRecent || !recent ? (
+          {loadingRecent ? (
             <div className="bg-card border border-border rounded-xl h-80 flex items-center justify-center shadow-sm">
-              <div className="flex flex-col items-center gap-3 text-muted-foreground">
-                <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                <p className="text-sm">Loading recent bookings...</p>
-              </div>
+              <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
             </div>
-          ) : (
+          ) : recent && recent.length > 0 ? (
             <RecentActivity bookings={recent} />
+          ) : (
+            <div className="bg-card border border-border rounded-xl h-80 flex items-center justify-center shadow-sm">
+              <p className="text-sm text-muted-foreground">No recent bookings.</p>
+            </div>
           )}
         </div>
       </div>

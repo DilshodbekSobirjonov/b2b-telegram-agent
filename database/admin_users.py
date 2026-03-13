@@ -21,18 +21,12 @@ def verify_password(plain: str, hashed: str) -> bool:
 
 
 def seed_default_users(db):
-    """Seed default admin and business users if they don't exist."""
-    existing = db.query(AdminUser).count()
-    if existing == 0:
+    """Seed default super admin if none exists."""
+    existing = db.query(AdminUser).filter(AdminUser.role == "SUPER_ADMIN").first()
+    if not existing:
         db.add(AdminUser(
             username="admin",
             hashed_password=hash_password("admin123"),
             role="SUPER_ADMIN",
-        ))
-        db.add(AdminUser(
-            username="biz",
-            hashed_password=hash_password("biz123"),
-            role="BUSINESS_ADMIN",
-            business_id=1,
         ))
         db.commit()

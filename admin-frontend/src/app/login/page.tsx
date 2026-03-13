@@ -2,10 +2,10 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import Cookies from 'js-cookie'
 import { Bot, Lock, User, AlertCircle } from 'lucide-react'
 
 import { api } from '@/lib/api'
+import { useAuth } from '@/components/auth-provider'
 
 export default function LoginPage() {
   const [username, setUsername] = useState('')
@@ -13,6 +13,7 @@ export default function LoginPage() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const router = useRouter()
+  const { refreshSession } = useAuth()
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -21,7 +22,14 @@ export default function LoginPage() {
 
     try {
       const data = await api.post('/api/auth/login', { username, password })
-      Cookies.set('auth_token', data.token, { expires: 7 })
+      localStorage.setItem('auth_token', data.token)
+      localStorage.setItem('user_session', JSON.stringify({
+        user_id: data.user_id,
+        username: data.username,
+        role: data.role,
+        business_id: data.business_id
+      }))
+      await refreshSession()
       router.push('/dashboard')
     } catch (err: any) {
       setError(err.message || 'Login failed. Please try again.')
@@ -59,7 +67,7 @@ export default function LoginPage() {
                 value={username}
                 onChange={e => setUsername(e.target.value)}
                 className="w-full bg-background border border-border rounded-xl py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-foreground"
-                placeholder="admin or biz"
+                placeholder="Enter your username"
                 required
               />
             </div>
@@ -92,11 +100,9 @@ export default function LoginPage() {
           </div>
         </form>
 
-        <div className="mt-6 text-center text-xs text-muted-foreground space-y-1">
-          <p className="font-medium">Demo Accounts:</p>
-          <p>Super Admin: <b>admin / admin123</b></p>
-          <p>Business Admin: <b>biz / biz123</b></p>
-        </div>
+        <p className="mt-6 text-center text-xs text-muted-foreground">
+          B2B Telegram SaaS &copy; {new Date().getFullYear()}
+        </p>
       </div>
     </div>
   )

@@ -4,10 +4,11 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from jose import JWTError, jwt
 from datetime import datetime, timedelta
+from typing import Optional
 import os
 
 from database.repository import Repository
-from database.admin_users import AdminUser, verify_password
+from database.admin_users import AdminUser, verify_password, hash_password
 
 router = APIRouter(prefix="/api/auth", tags=["Auth"])
 
@@ -58,7 +59,13 @@ def login(req: LoginRequest, db: Session = Depends(Repository.get_db)):
         "user_id": user.id,
         "business_id": user.business_id,
     })
-    return {"token": token, "role": user.role, "username": user.username}
+    return {
+        "token": token, 
+        "role": user.role, 
+        "username": user.username,
+        "user_id": user.id,
+        "business_id": user.business_id
+    }
 
 
 @router.post("/logout")
@@ -74,3 +81,23 @@ def get_session(current_user: AdminUser = Depends(get_current_user)):
         "role": current_user.role,
         "business_id": current_user.business_id,
     }
+
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str
+    new_password: str
+
+
+@router.post("/change-password")
+def change_password(
+    req: ChangePasswordRequest,
+    db: Session = Depends(Repository.get_db),
+    current_user: AdminUser = Depends(get_current_user)
+):
+    if not verify_password(req.current_password, current_user.hashed_password):
+        raise HTTPException(status_code=400, detail="Current password is incorrect")
+    if len(req.new_password) < 6:
+        raise HTTPException(status_code=400, detail="New password must be at least 6 characters")
+    current_user.hashed_password = hash_password(req.new_password)
+    db.commit()
+    return {"message": "Password changed successfully"}
