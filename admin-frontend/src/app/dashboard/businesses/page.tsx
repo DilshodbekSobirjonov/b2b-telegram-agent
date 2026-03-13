@@ -143,7 +143,12 @@ export default function BusinessesPage() {
 
 
 
-  if (authLoading) return null
+  if (authLoading) return (
+    <div className="py-20 text-center text-muted-foreground">
+      <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2" />
+      Authenticating...
+    </div>
+  )
   if (!session || session.role !== 'SUPER_ADMIN') return null
 
   const handleDisableToggle = async (biz: Business) => {

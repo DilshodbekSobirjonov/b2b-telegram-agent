@@ -96,7 +96,11 @@ export default function AISettingsPage() {
 
 
 
-  if (authLoading) return null
+  if (authLoading) return (
+    <div className="flex items-center justify-center p-20">
+      <Loader2 className="w-8 h-8 animate-spin text-primary" />
+    </div>
+  )
   if (!session || session.role !== 'SUPER_ADMIN') return null
 
   const handleToggle = async (provider: AIProvider) => {

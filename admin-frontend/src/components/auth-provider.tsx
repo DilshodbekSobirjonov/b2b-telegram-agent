@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useState, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { api } from '@/lib/api';
+import Cookies from 'js-cookie';
 
 export interface Session {
   user_id: number;
@@ -26,22 +27,8 @@ const AuthContext = createContext<AuthContextType>({
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [session, setSession] = useState<Session | null>(() => {
-    if (typeof window === 'undefined') return null;
-    const sessionStr = localStorage.getItem('user_session');
-    try {
-      return sessionStr ? JSON.parse(sessionStr) : null;
-    } catch {
-      return null;
-    }
-  });
-  const [loading, setLoading] = useState(() => {
-    if (typeof window === 'undefined') return true;
-    const token = localStorage.getItem('auth_token');
-    const sessionStr = localStorage.getItem('user_session');
-    // If we have data, we're not "loading" - we're ready
-    return !(token && sessionStr);
-  });
+  const [session, setSession] = useState<Session | null>(null);
+  const [loading, setLoading] = useState(true);
   const router = useRouter();
   const pathname = usePathname();
   const pathnameRef = useRef(pathname);
@@ -59,7 +46,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!token || !sessionStr) {
       setSession(null);
       setLoading(false);
-      if (pathnameRef.current !== '/login') router.push('/login');
       return;
     }
     
@@ -69,8 +55,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.error("Failed to parse user session", err);
       localStorage.removeItem('auth_token');
       localStorage.removeItem('user_session');
+      Cookies.remove('auth_token');
       setSession(null);
-      if (pathnameRef.current !== '/login') router.push('/login');
     } finally {
       setLoading(false);
     }
@@ -83,8 +69,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = () => {
     localStorage.removeItem('auth_token');
     localStorage.removeItem('user_session');
+    Cookies.remove('auth_token');
     setSession(null);
-    window.location.href = '/login';
+    router.push('/login');
   };
 
   return (

@@ -19,12 +19,7 @@ export default function DashboardLayout({
     lastSession.current = session
   }
 
-  if (!loading && !session) {
-    if (typeof window !== 'undefined') {
-      window.location.href = '/login'
-    }
-    return null
-  }
+
 
   if (loading) {
     return (

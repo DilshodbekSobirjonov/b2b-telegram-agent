@@ -6,6 +6,7 @@ import { Bot, Lock, User, AlertCircle } from 'lucide-react'
 
 import { api } from '@/lib/api'
 import { useAuth } from '@/components/auth-provider'
+import Cookies from 'js-cookie'
 
 export default function LoginPage() {
   const [username, setUsername] = useState('')
@@ -22,6 +23,7 @@ export default function LoginPage() {
 
     try {
       const data = await api.post('/api/auth/login', { username, password })
+      
       localStorage.setItem('auth_token', data.token)
       localStorage.setItem('user_session', JSON.stringify({
         user_id: data.user_id,
@@ -29,8 +31,12 @@ export default function LoginPage() {
         role: data.role,
         business_id: data.business_id
       }))
+      
+      // Set cookies for middleware
+      Cookies.set('auth_token', data.token, { expires: 7 })
+      
       await refreshSession()
-      window.location.href = '/dashboard'
+      router.push('/dashboard')
     } catch (err: any) {
       setError(err.message || 'Login failed. Please try again.')
     } finally {
