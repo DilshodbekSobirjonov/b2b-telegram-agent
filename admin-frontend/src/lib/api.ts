@@ -10,10 +10,15 @@ export const fetcher = async (endpoint: string, options: RequestInit = {}) => {
   };
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
-  const res = await fetch(`${API_BASE_URL}${endpoint}`, { ...options, headers });
+  const res = await fetch(`${API_BASE_URL}${endpoint}`, { 
+    ...options, 
+    headers,
+    credentials: 'include' 
+  });
 
   if (!res.ok) {
     const info = await res.json().catch(() => ({}));
+    console.error(`API Error [${res.status}]:`, info);
     const error: any = new Error(info.detail || 'API request failed');
     error.status = res.status;
     error.info = info;

@@ -116,3 +116,20 @@ def get_dashboard_stats(
             "totalClients": unique_clients,
             "weeklyGrowth": round(weekly_growth, 1),
         }
+
+
+@router.get("/chart")
+def get_dashboard_chart(
+    db: Session = Depends(Repository.get_db),
+    current_user: AdminUser = Depends(get_current_user)
+):
+    # Dummy chart data: Daily bookings for the last 7 days
+    data = []
+    today = date.today()
+    for i in range(6, -1, -1):
+        day = today - timedelta(days=i)
+        data.append({
+            "date": day.strftime("%Y-%m-%d"),
+            "bookings": 5 + (i % 3) * 2  # Mock variability
+        })
+    return data

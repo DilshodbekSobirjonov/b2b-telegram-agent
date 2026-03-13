@@ -37,17 +37,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (pathname !== '/login') router.push('/login');
         return;
       }
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
 
       try {
         const res = await fetch(`${API_BASE_URL}/api/auth/session`, {
           headers: { Authorization: `Bearer ${token}` },
+          signal: controller.signal,
         });
+        clearTimeout(timeoutId);
 
         if (!res.ok) throw new Error('Session invalid');
 
         const data: Session = await res.json();
         setSession(data);
-      } catch {
+      } catch (err: any) {
+        clearTimeout(timeoutId);
+        console.error("Auth check failed:", err.name === 'AbortError' ? 'Timeout' : err.message);
         Cookies.remove('auth_token');
         setSession(null);
         if (pathname !== '/login') router.push('/login');
