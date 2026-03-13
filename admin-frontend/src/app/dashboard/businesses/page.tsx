@@ -136,7 +136,7 @@ import { useRouter } from "next/navigation"
 
 export default function BusinessesPage() {
   const { data: businesses, isLoading, error } = useSWR<Business[]>('/api/businesses', api.fetcher)
-  const { session } = useAuth()
+  const { session, loading: authLoading } = useAuth()
   const router = useRouter()
   const [showModal, setShowModal] = useState(false)
   const [actionId, setActionId] = useState<number | null>(null)
@@ -147,6 +147,7 @@ export default function BusinessesPage() {
     }
   }, [session, router])
 
+  if (authLoading) return null
   if (!session || session.role !== 'SUPER_ADMIN') return null
 
   const handleDisableToggle = async (biz: Business) => {

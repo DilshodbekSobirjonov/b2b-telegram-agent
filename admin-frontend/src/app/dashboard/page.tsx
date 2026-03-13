@@ -8,12 +8,14 @@ import { useDataFetch } from "@/lib/hooks"
 import { useAuth } from "@/components/auth-provider"
 
 export default function DashboardPage() {
-  const { session } = useAuth()
+  const { session, loading: authLoading } = useAuth()
   const isSuperAdmin = session?.role === 'SUPER_ADMIN'
+  
+  if (authLoading) return null
 
-  const { data: stats, loading: loadingStats } = useDataFetch<any>('/api/dashboard/stats')
-  const { data: chartData, loading: loadingChart } = useDataFetch<any[]>('/api/dashboard/chart')
-  const { data: recent, loading: loadingRecent } = useDataFetch<any[]>('/api/bookings/recent')
+  const { data: stats, loading: loadingStats, error: statsError } = useDataFetch<any>('/api/dashboard/stats')
+  const { data: chartData, loading: loadingChart, error: chartError } = useDataFetch<any[]>('/api/dashboard/chart')
+  const { data: recent, loading: loadingRecent, error: recentError } = useDataFetch<any[]>('/api/bookings/recent')
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -34,22 +36,22 @@ export default function DashboardPage() {
           <>
             <StatCard
               title="Total Revenue"
-              value={loadingStats ? "..." : `$${(stats?.totalRevenue ?? 0).toLocaleString()}`}
+              value={(loadingStats && !statsError) ? "..." : `$${(stats?.totalRevenue ?? 0).toLocaleString()}`}
               trend="Monthly total" trendUp={true} icon={DollarSign}
             />
             <StatCard
               title="Active Bots"
-              value={loadingStats ? "..." : `${stats?.activeBots ?? 0}`}
+              value={(loadingStats && !statsError) ? "..." : `${stats?.activeBots ?? 0}`}
               trend="Current active" trendUp={true} icon={Bot}
             />
             <StatCard
               title="Total Appointments"
-              value={loadingStats ? "..." : `${stats?.appointments ?? 0}`}
+              value={(loadingStats && !statsError) ? "..." : `${stats?.appointments ?? 0}`}
               trend="This month" trendUp={true} icon={CalendarCheck}
             />
             <StatCard
               title="AI Efficiency"
-              value={loadingStats ? "..." : `${stats?.aiEfficiency ?? 0}%`}
+              value={(loadingStats && !statsError) ? "..." : `${stats?.aiEfficiency ?? 0}%`}
               trend="Bot vs Human" trendUp={true} icon={Zap}
             />
           </>
@@ -57,22 +59,22 @@ export default function DashboardPage() {
           <>
             <StatCard
               title="Today's Bookings"
-              value={loadingStats ? "..." : `${stats?.todayBookings ?? 0}`}
+              value={(loadingStats && !statsError) ? "..." : `${stats?.todayBookings ?? 0}`}
               trend="Today" trendUp={true} icon={CalendarCheck}
             />
             <StatCard
               title="Free Slots Today"
-              value={loadingStats ? "..." : `${stats?.freeSlots ?? 0}`}
+              value={(loadingStats && !statsError) ? "..." : `${stats?.freeSlots ?? 0}`}
               trend="Available now" trendUp={false} icon={Clock}
             />
             <StatCard
               title="Total Clients"
-              value={loadingStats ? "..." : `${stats?.totalClients ?? 0}`}
+              value={(loadingStats && !statsError) ? "..." : `${stats?.totalClients ?? 0}`}
               trend="All time" trendUp={true} icon={Users}
             />
             <StatCard
               title="Weekly Growth"
-              value={loadingStats ? "..." : `${stats?.weeklyGrowth ?? 0}%`}
+              value={(loadingStats && !statsError) ? "..." : `${stats?.weeklyGrowth ?? 0}%`}
               trend="vs last week" trendUp={(stats?.weeklyGrowth ?? 0) >= 0} icon={TrendingUp}
             />
           </>
@@ -81,7 +83,7 @@ export default function DashboardPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
-          {loadingChart ? (
+          {(loadingChart && !chartError) ? (
             <div className="bg-card border border-border rounded-xl h-80 flex items-center justify-center shadow-sm">
               <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
             </div>
@@ -94,7 +96,7 @@ export default function DashboardPage() {
           )}
         </div>
         <div className="lg:col-span-1">
-          {loadingRecent ? (
+          {(loadingRecent && !recentError) ? (
             <div className="bg-card border border-border rounded-xl h-80 flex items-center justify-center shadow-sm">
               <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
             </div>

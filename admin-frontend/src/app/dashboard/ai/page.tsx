@@ -89,7 +89,7 @@ function AddProviderModal({ onClose, onSuccess }: { onClose: () => void; onSucce
 
 export default function AISettingsPage() {
   const { data: providers, isLoading } = useSWR<AIProvider[]>('/api/ai-providers', api.fetcher)
-  const { session } = useAuth()
+  const { session, loading: authLoading } = useAuth()
   const router = useRouter()
   const [loadingId, setLoadingId] = useState<number | null>(null)
   const [showModal, setShowModal] = useState(false)
@@ -100,6 +100,7 @@ export default function AISettingsPage() {
     }
   }, [session, router])
 
+  if (authLoading) return null
   if (!session || session.role !== 'SUPER_ADMIN') return null
 
   const handleToggle = async (provider: AIProvider) => {

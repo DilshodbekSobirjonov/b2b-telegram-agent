@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/components/auth-provider"
 import { Sidebar } from "@/components/layout/sidebar"
@@ -12,6 +12,18 @@ export default function DashboardLayout({
   children: React.ReactNode
 }) {
   const { session, loading } = useAuth()
+  const router = useRouter()
+  const lastSession = useRef(session)
+
+  if (session) {
+    lastSession.current = session
+  }
+
+  useEffect(() => {
+    if (!loading && !session) {
+      router.push('/login')
+    }
+  }, [loading, session, router])
 
   if (loading) {
     return (
@@ -24,7 +36,7 @@ export default function DashboardLayout({
     )
   }
 
-  if (!session) return null
+  if (!session && !lastSession.current) return null
 
   return (
     <div className="flex min-h-screen">

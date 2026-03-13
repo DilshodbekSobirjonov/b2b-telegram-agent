@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { api } from '@/lib/api';
 
@@ -30,6 +30,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const pathname = usePathname();
+  const pathnameRef = useRef(pathname);
+
+  useEffect(() => {
+    pathnameRef.current = pathname;
+  }, [pathname]);
 
   const refreshSession = async () => {
     if (typeof window === 'undefined') return;
@@ -40,7 +45,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!token || !sessionStr) {
       setSession(null);
       setLoading(false);
-      if (pathname !== '/login') router.push('/login');
+      if (pathnameRef.current !== '/login') router.push('/login');
       return;
     }
     
@@ -51,7 +56,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       localStorage.removeItem('auth_token');
       localStorage.removeItem('user_session');
       setSession(null);
-      if (pathname !== '/login') router.push('/login');
+      if (pathnameRef.current !== '/login') router.push('/login');
     } finally {
       setLoading(false);
     }
