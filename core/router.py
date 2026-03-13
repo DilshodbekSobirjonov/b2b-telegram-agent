@@ -17,12 +17,21 @@ class MessageRouter:
         
         # 1. Retrieve session
         session = SessionManager.get_session(user_id)
+        state = session.get("state", "IDLE")
         
-        # 2. Add system context (Optional: Inject business context based on session)
-        # context = context_builder.build_context(session)
+        # 2. Check if we are already in an active flow (state machine)
+        if state.startswith("booking_"):
+            logger.info(f"User {user_id} is in active state {state}, routing to booking.")
+            feature_class = get_feature("booking")
+            return await feature_class().handle(message, session)
+            
+        if state.startswith("crm_"):
+            logger.info(f"User {user_id} is in active state {state}, routing to crm.")
+            feature_class = get_feature("crm")
+            return await feature_class().handle(message, session)
         
-        # 3. Detect Intent via AI layer
-        logger.info(f"Detecting intent for user {user_id}")
+        # 3. Detect Intent via AI layer if IDLE
+        logger.info(f"Detecting intent for user {user_id} with text: {text}")
         intent = await self.ai.detect_intent(text)
         logger.info(f"Detected intent: {intent}")
         
@@ -30,9 +39,8 @@ class MessageRouter:
         feature_class = get_feature(intent)
         
         if not feature_class:
-            # Fallback or general conversational feature
-            logger.warning(f"No explicit feature found for intent '{intent}'. Falling back to FAQ/Conversational.")
-            feature_class = get_feature("faq")  # fallback example
+            logger.warning(f"No explicit feature found for intent '{intent}'. Falling back to FAQ.")
+            feature_class = get_feature("faq")
             
         if feature_class:
             handler = feature_class()
