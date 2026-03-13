@@ -139,13 +139,7 @@ export default function BusinessesPage() {
   const [showModal, setShowModal] = useState(false)
   const [actionId, setActionId] = useState<number | null>(null)
 
-  if (authLoading) return (
-    <div className="py-20 flex flex-col items-center justify-center text-muted-foreground">
-      <Loader2 className="w-10 h-10 animate-spin mb-4 text-primary" />
-      <p className="text-sm font-medium">Loading session data...</p>
-    </div>
-  )
-  
+  if (authLoading) return <div className="min-h-screen bg-background" />
   if (!session || session.role !== 'SUPER_ADMIN') return null
 
   const handleDisableToggle = async (biz: Business) => {

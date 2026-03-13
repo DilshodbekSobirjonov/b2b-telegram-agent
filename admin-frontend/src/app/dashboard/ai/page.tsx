@@ -4,8 +4,7 @@ import { Cpu, Key, Activity, DollarSign, Plus, Loader2, X, AlertCircle } from "l
 import useSWR, { mutate } from "swr"
 import { api } from "@/lib/api"
 import { useAuth } from "@/components/auth-provider"
-import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
+import { useState } from "react"
 
 interface AIProvider {
   id: number
@@ -90,17 +89,10 @@ function AddProviderModal({ onClose, onSuccess }: { onClose: () => void; onSucce
 export default function AISettingsPage() {
   const { data: providers, isLoading } = useSWR<AIProvider[]>('/api/ai-providers', api.fetcher)
   const { session, loading: authLoading } = useAuth()
-  const router = useRouter()
   const [loadingId, setLoadingId] = useState<number | null>(null)
   const [showModal, setShowModal] = useState(false)
 
-
-
-  if (authLoading) return (
-    <div className="flex items-center justify-center p-20">
-      <Loader2 className="w-8 h-8 animate-spin text-primary" />
-    </div>
-  )
+  if (authLoading) return <div className="min-h-screen bg-background" />
   if (!session || session.role !== 'SUPER_ADMIN') return null
 
   const handleToggle = async (provider: AIProvider) => {
