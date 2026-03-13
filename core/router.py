@@ -53,8 +53,8 @@ class MessageRouter:
             if intent == "faq" or not get_feature(intent):
                 last_faq = session.get("last_faq_time", 0)
                 if time.time() - last_faq < 5:
-                    logger.warning(f"FAQ Spam detected for user {user_id}. Rate limiting.")
-                    return "..." # Silent or very short response
+                    logger.warning(f"FAQ Spam detected for user {user_id}. Silently dropping message.")
+                    return None # Drop silently to break auto-responder loops
                 session["last_faq_time"] = time.time()
 
             handler = feature_class()

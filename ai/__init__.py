@@ -31,16 +31,37 @@ def load_ai_provider(business_id=None):
         
     logger.info(f"Loading AI Provider: {provider_name}")
     
-    if provider_name == "anthropic":
-        from ai.providers.anthropic_adapter import AnthropicAdapter
-        return AnthropicAdapter(api_key=api_key)
-    elif provider_name == "openai":
-        from ai.providers.openai_adapter import OpenAIAdapter
-        return OpenAIAdapter(api_key=api_key)
-    elif provider_name == "gemini":
-        from ai.providers.gemini_adapter import GeminiAdapter
-        return GeminiAdapter(api_key=api_key)
-    else:
-        logger.error(f"Unknown AI_PROVIDER '{provider_name}'. Falling back to Anthropic.")
-        from ai.providers.anthropic_adapter import AnthropicAdapter
-        return AnthropicAdapter(api_key=api_key)
+    try:
+        if provider_name == "anthropic":
+            if not api_key:
+                logger.warning("No ANTHROPIC_API_KEY found. Falling back to MockAdapter.")
+                from ai.providers.mock_adapter import MockAdapter
+                return MockAdapter()
+            from ai.providers.anthropic_adapter import AnthropicAdapter
+            return AnthropicAdapter(api_key=api_key)
+            
+        elif provider_name == "openai":
+            if not api_key:
+                logger.warning("No OPENAI_API_KEY found. Falling back to MockAdapter.")
+                from ai.providers.mock_adapter import MockAdapter
+                return MockAdapter()
+            from ai.providers.openai_adapter import OpenAIAdapter
+            return OpenAIAdapter(api_key=api_key)
+            
+        elif provider_name == "gemini":
+            if not api_key:
+                logger.warning("No GEMINI_API_KEY found. Falling back to MockAdapter.")
+                from ai.providers.mock_adapter import MockAdapter
+                return MockAdapter()
+            from ai.providers.gemini_adapter import GeminiAdapter
+            return GeminiAdapter(api_key=api_key)
+            
+        else:
+            logger.error(f"Unknown AI_PROVIDER '{provider_name}'. Falling back to MockAdapter.")
+            from ai.providers.mock_adapter import MockAdapter
+            return MockAdapter()
+            
+    except Exception as e:
+        logger.error(f"Failed to initialize AI Provider {provider_name}: {e}. Falling back to MockAdapter.")
+        from ai.providers.mock_adapter import MockAdapter
+        return MockAdapter()

@@ -75,6 +75,15 @@ def create_business(
     db: Session = Depends(Repository.get_db),
     current_user: AdminUser = Depends(require_super_admin)
 ):
+    if not body.name.strip():
+        raise HTTPException(status_code=400, detail="Business name is required")
+    if not body.login.strip():
+        raise HTTPException(status_code=400, detail="Admin login is required")
+    if not body.password.strip():
+        raise HTTPException(status_code=400, detail="Admin password is required")
+    if not body.telegram_token.strip():
+        raise HTTPException(status_code=400, detail="Telegram bot token is required")
+
     # Check if login already exists
     from database.admin_users import AdminUser, hash_password
     existing_user = db.query(AdminUser).filter(AdminUser.username == body.login).first()
