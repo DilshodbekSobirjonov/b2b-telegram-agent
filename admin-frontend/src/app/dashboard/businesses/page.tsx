@@ -14,32 +14,47 @@ interface Business {
   nextPayment: string
   clients: number
   aiEnabled: boolean
+  aiProviderName: string | null
+  aiProviderType: string | null
 }
 
 function AddBusinessModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
-  const [name, setName] = useState("")
-  const [login, setLogin] = useState("")
-  const [password, setPassword] = useState("")
-  const [aiProvider, setAiProvider] = useState("anthropic")
-  const [token, setToken] = useState("")
-  const [workingHours, setWorkingHours] = useState("09:00-18:00")
-  const [timezone, setTimezone] = useState("UTC")
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState("")
+  const { data: providers } = useSWR<{ id: number; name: string; provider: string; is_active: boolean }[]>(
+    "/api/ai-providers",
+    api.fetcher,
+  )
+  const activeProviders = providers?.filter(p => p.is_active) ?? []
+
+  const [name, setName]               = useState("")
+  const [login, setLogin]             = useState("")
+  const [password, setPassword]       = useState("")
+  const [aiProviderId, setAiProvId]   = useState<number | "">("")
+  const [aiRules, setAiRules]         = useState("")
+  const [assistantType, setAssistant] = useState("sales")
+  const [token, setToken]             = useState("")
+  const [workingHours, setHours]      = useState("09:00-18:00")
+  const [timezone, setTimezone]       = useState("UTC")
+  const [loading, setLoading]         = useState(false)
+  const [error, setError]             = useState("")
+
+  const inputCls = "w-full bg-background border border-border rounded-xl py-2.5 px-4 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary text-foreground transition-all"
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!aiProviderId) { setError("Please select an AI Engine"); return }
     setLoading(true)
     setError("")
     try {
-      await api.post("/api/businesses", { 
-        name, 
-        login, 
-        password, 
-        ai_provider: aiProvider,
+      await api.post("/api/businesses", {
+        name,
+        login,
+        password,
+        ai_provider_id: aiProviderId,
+        ai_rules: aiRules || null,
+        assistant_type: assistantType,
         telegram_token: token,
         working_hours: workingHours,
-        timezone: timezone
+        timezone,
       })
       onSuccess()
       onClose()
@@ -52,7 +67,7 @@ function AddBusinessModal({ onClose, onSuccess }: { onClose: () => void; onSucce
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-card border border-border rounded-2xl shadow-xl w-full max-w-md p-6 animate-in fade-in zoom-in-95 max-h-[90vh] overflow-y-auto font-sans">
+      <div className="bg-card border border-border rounded-2xl shadow-xl w-full max-w-lg p-6 animate-in fade-in zoom-in-95 max-h-[90vh] overflow-y-auto font-sans">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-bold text-foreground">Add New Business</h2>
           <button onClick={onClose} className="p-2 rounded-lg hover:bg-muted text-muted-foreground transition-colors">
@@ -67,61 +82,95 @@ function AddBusinessModal({ onClose, onSuccess }: { onClose: () => void; onSucce
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
+
+          {/* ── Business Info ── */}
           <div>
             <label className="text-sm font-medium text-foreground block mb-1.5">Business Name *</label>
-            <input value={name} onChange={e => setName(e.target.value)} required
-              className="w-full bg-background border border-border rounded-xl py-2.5 px-4 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary text-foreground transition-all"
-              placeholder="e.g. Acme Dental" />
+            <input value={name} onChange={e => setName(e.target.value)} required className={inputCls} placeholder="e.g. Acme Dental" />
           </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="text-sm font-medium text-foreground block mb-1.5">Admin Login *</label>
-              <input value={login} onChange={e => setLogin(e.target.value)} required
-                className="w-full bg-background border border-border rounded-xl py-2.5 px-4 text-sm outline-none focus:border-primary text-foreground transition-all"
-                placeholder="biz_admin" />
+              <input value={login} onChange={e => setLogin(e.target.value)} required className={inputCls} placeholder="biz_admin" />
             </div>
             <div>
               <label className="text-sm font-medium text-foreground block mb-1.5">Admin Password *</label>
-              <input value={password} type="password" onChange={e => setPassword(e.target.value)} required
-                className="w-full bg-background border border-border rounded-xl py-2.5 px-4 text-sm outline-none focus:border-primary text-foreground transition-all"
-                placeholder="••••••••" />
+              <input value={password} type="password" onChange={e => setPassword(e.target.value)} required className={inputCls} placeholder="••••••••" />
             </div>
           </div>
-          <div>
-            <label className="text-sm font-medium text-foreground block mb-1.5">AI Provider *</label>
-            <select value={aiProvider} onChange={e => setAiProvider(e.target.value)}
-              className="w-full bg-background border border-border rounded-xl py-2.5 px-4 text-sm outline-none focus:border-primary text-foreground transition-all appearance-none cursor-pointer">
-              <option value="anthropic">Anthropic Claude</option>
-              <option value="openai">OpenAI GPT-4</option>
-              <option value="gemini">Google Gemini</option>
-            </select>
-          </div>
+
           <div>
             <label className="text-sm font-medium text-foreground block mb-1.5">Telegram Bot Token *</label>
-            <input value={token} onChange={e => setToken(e.target.value)} required
-              className="w-full bg-background border border-border rounded-xl py-2.5 px-4 text-sm outline-none focus:border-primary text-foreground font-mono transition-all"
-              placeholder="7123456789:AAF..." />
+            <input value={token} onChange={e => setToken(e.target.value)} required className={`${inputCls} font-mono`} placeholder="7123456789:AAF..." />
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="text-sm font-medium text-foreground block mb-1.5">Working Hours *</label>
-              <input value={workingHours} onChange={e => setWorkingHours(e.target.value)} required
-                className="w-full bg-background border border-border rounded-xl py-2.5 px-4 text-sm outline-none focus:border-primary text-foreground transition-all"
-                placeholder="09:00-18:00" />
+
+          {/* ── AI Engine (from global registry) ── */}
+          <div className="pt-2 border-t border-border/60">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-3">AI Configuration</p>
+
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <div>
+                <label className="text-sm font-medium text-foreground block mb-1.5">AI Engine *</label>
+                {activeProviders.length === 0 ? (
+                  <div className="text-xs text-amber-500 bg-amber-500/10 border border-amber-500/20 rounded-xl p-3">
+                    No active AI engines. Add one in <strong>AI Settings</strong> first.
+                  </div>
+                ) : (
+                  <select
+                    value={aiProviderId}
+                    onChange={e => setAiProvId(Number(e.target.value))}
+                    required
+                    className={`${inputCls} cursor-pointer appearance-none`}
+                  >
+                    <option value="">Select engine…</option>
+                    {activeProviders.map(p => (
+                      <option key={p.id} value={p.id}>{p.name}</option>
+                    ))}
+                  </select>
+                )}
+              </div>
+              <div>
+                <label className="text-sm font-medium text-foreground block mb-1.5">Assistant Type *</label>
+                <select value={assistantType} onChange={e => setAssistant(e.target.value)} className={`${inputCls} cursor-pointer appearance-none`}>
+                  <option value="sales">Sales</option>
+                  <option value="booking">Booking</option>
+                </select>
+              </div>
             </div>
+
             <div>
-              <label className="text-sm font-medium text-foreground block mb-1.5">Timezone *</label>
-              <input value={timezone} onChange={e => setTimezone(e.target.value)} required
-                className="w-full bg-background border border-border rounded-xl py-2.5 px-4 text-sm outline-none focus:border-primary text-foreground transition-all"
-                placeholder="UTC" />
+              <label className="text-sm font-medium text-foreground block mb-1.5">Business Rules <span className="text-muted-foreground font-normal">(optional)</span></label>
+              <textarea
+                value={aiRules}
+                onChange={e => setAiRules(e.target.value)}
+                rows={3}
+                className={`${inputCls} resize-none`}
+                placeholder="e.g. Always greet customers by name. Never discuss competitor pricing."
+              />
             </div>
           </div>
+
+          {/* ── Schedule ── */}
+          <div className="pt-2 border-t border-border/60">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-3">Schedule</p>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium text-foreground block mb-1.5">Working Hours *</label>
+                <input value={workingHours} onChange={e => setHours(e.target.value)} required className={inputCls} placeholder="09:00-18:00" />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-foreground block mb-1.5">Timezone *</label>
+                <input value={timezone} onChange={e => setTimezone(e.target.value)} required className={inputCls} placeholder="UTC" />
+              </div>
+            </div>
+          </div>
+
           <div className="pt-2 flex gap-3">
-            <button type="button" onClick={onClose}
-              className="flex-1 py-2.5 rounded-xl border border-border text-muted-foreground hover:bg-muted text-sm font-medium transition-all">
+            <button type="button" onClick={onClose} className="flex-1 py-2.5 rounded-xl border border-border text-muted-foreground hover:bg-muted text-sm font-medium transition-all">
               Cancel
             </button>
-            <button type="submit" disabled={loading}
+            <button type="submit" disabled={loading || !aiProviderId}
               className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-500 text-white text-sm font-semibold hover:shadow-lg hover:shadow-indigo-500/20 active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-2">
               {loading && <Loader2 className="w-4 h-4 animate-spin" />}
               {loading ? "Creating..." : "Create Business"}
@@ -236,10 +285,10 @@ export default function BusinessesPage() {
                       <span className={`inline-flex items-center w-fit px-3 py-1 rounded-lg text-xs font-bold tracking-tight ${biz.status === 'active' ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20' : 'bg-slate-500/15 text-slate-400 border border-slate-500/20'}`}>
                         {biz.status?.toUpperCase()}
                       </span>
-                      {biz.aiEnabled && (
+                      {biz.aiProviderName && (
                         <div className="flex items-center gap-1.5 text-primary">
                           <div className="w-1 h-1 rounded-full bg-primary animate-pulse" />
-                          <span className="text-[10px] font-black uppercase tracking-widest">AI Agent Online</span>
+                          <span className="text-[10px] font-black uppercase tracking-widest">{biz.aiProviderName}</span>
                         </div>
                       )}
                     </div>

@@ -2,28 +2,32 @@ from core.logger import get_logger
 
 logger = get_logger()
 
+
 class TelegramBusinessClient:
-    """Handles Telegram Business API communication."""
-    
-    def __init__(self):
-        self.bot = None
-        logger.info("Initialized TelegramBusinessClient")
+    """
+    Sends messages via Telegram Business API.
+    Uses the bot that received the original business message (identified by bot_token).
+    """
 
-    def set_bot(self, bot):
-        self.bot = bot
+    def __init__(self, registry):
+        self.registry = registry
 
-    async def send_message(self, user_id: str, text: str, business_connection_id: str):
-        if not self.bot:
-            logger.error("TelegramBusinessClient: Bot instance not set. Cannot send message.")
+    async def send_message(
+        self,
+        bot_token: str,
+        user_id: str,
+        text: str,
+        business_connection_id: str,
+    ):
+        bot = self.registry.get(bot_token)
+        if not bot:
+            logger.error(f"send_business_message: bot token ...{bot_token[-6:]} not in registry")
             return
-
-        logger.info(f"TelegramBusinessClient sending message to {user_id} via connection {business_connection_id}: {text}")
         try:
-            await self.bot.send_message(
-                chat_id=user_id, 
-                text=text, 
-                business_connection_id=business_connection_id
+            await bot.send_message(
+                chat_id=int(user_id),
+                text=text,
+                business_connection_id=business_connection_id,
             )
         except Exception as e:
-            logger.error(f"Failed to send business message to {user_id}: {e}")
-
+            logger.error(f"send_business_message failed for user {user_id}: {e}")

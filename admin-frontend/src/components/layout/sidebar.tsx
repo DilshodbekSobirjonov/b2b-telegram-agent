@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   Home, Users, Building2, Bot, Cpu, Settings,
-  CalendarDays, MessageSquare, BarChart3
+  CalendarDays, MessageSquare, BarChart3, Package, ShoppingCart
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/components/auth-provider';
@@ -17,7 +17,16 @@ const SUPER_ADMIN_NAV = [
   { icon: BarChart3,   label: 'Analytics',      href: '/dashboard/analytics' },
 ];
 
-const BUSINESS_ADMIN_NAV = [
+const SALES_ADMIN_NAV = [
+  { icon: Home,          label: 'Dashboard',    href: '/dashboard' },
+  { icon: Package,       label: 'Inventory',    href: '/dashboard/inventory' },
+  { icon: ShoppingCart,  label: 'Sales',        href: '/dashboard/sales' },
+  { icon: Users,         label: 'Clients',      href: '/dashboard/clients' },
+  { icon: MessageSquare, label: 'Conversations', href: '/dashboard/conversations' },
+  { icon: Settings,      label: 'Settings',     href: '/dashboard/settings' },
+];
+
+const BOOKING_ADMIN_NAV = [
   { icon: Home,          label: 'Dashboard',      href: '/dashboard' },
   { icon: CalendarDays,  label: 'Calendar',       href: '/dashboard/calendar' },
   { icon: Users,         label: 'Clients',        href: '/dashboard/clients' },
@@ -29,7 +38,11 @@ export function Sidebar() {
   const pathname = usePathname();
   const { session } = useAuth();
 
-  const navItems = session?.role === 'BUSINESS_ADMIN' ? BUSINESS_ADMIN_NAV : SUPER_ADMIN_NAV;
+  const navItems = session?.role === 'SUPER_ADMIN'
+    ? SUPER_ADMIN_NAV
+    : session?.assistant_type === 'sales'
+    ? SALES_ADMIN_NAV
+    : BOOKING_ADMIN_NAV;
 
   return (
     <div className="flex flex-col w-64 h-screen px-4 py-8 bg-card/50 backdrop-blur-md border-r border-border fixed left-0 top-0 z-20">

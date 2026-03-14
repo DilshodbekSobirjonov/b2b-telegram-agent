@@ -6,3 +6,7 @@ __pycache__/
 *.pyc
 *.sqlite3
 b2b_telegram_agent.db
+
+# Alembic
+alembic/__pycache__/
+alembic/versions/__pycache__/

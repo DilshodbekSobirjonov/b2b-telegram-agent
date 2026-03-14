@@ -1,23 +1,48 @@
-from core.logger import get_logger
 from datetime import datetime
+from core.logger import get_logger
 import uuid
 
 logger = get_logger()
 
+
 class ConversationArchiveService:
-    """Service to handle the logging of every message to the database."""
-    
-    @staticmethod
-    def log_message(conversation_id: str, sender: str, text: str):
-        logger.info(f"Archive Log [{conversation_id}] from {sender}: {text}")
-        # In a real implementation:
-        # db = SessionLocal()
-        # msg = MessageLog(conversation_id=conversation_id, sender=sender, text=text, timestamp=datetime.utcnow())
-        # db.add(msg)
-        # db.commit()
+    """Persists conversations and messages to PostgreSQL."""
 
     @staticmethod
-    def start_conversation(user_id: str, business_id: int = None) -> str:
+    def start_conversation(db, user_id: str, business_id: int) -> str:
+        from database.models import Conversation
+
         conv_id = str(uuid.uuid4())
-        logger.info(f"Started new conversation {conv_id} for user {user_id}")
+        conv = Conversation(
+            id=conv_id,
+            user_id=user_id,
+            business_id=business_id,
+            start_time=datetime.utcnow(),
+        )
+        db.add(conv)
+        db.commit()
+        logger.debug(f"Started conversation {conv_id} for user {user_id} / business {business_id}")
         return conv_id
+
+    @staticmethod
+    def log_message(db, conversation_id: str, sender: str, text: str):
+        from database.models import MessageLog
+
+        msg = MessageLog(
+            conversation_id=conversation_id,
+            sender=sender,
+            text=text,
+            timestamp=datetime.utcnow(),
+        )
+        db.add(msg)
+        db.commit()
+        logger.debug(f"Logged [{sender}] in conversation {conversation_id}")
+
+    @staticmethod
+    def end_conversation(db, conversation_id: str):
+        from database.models import Conversation
+
+        conv = db.query(Conversation).filter(Conversation.id == conversation_id).first()
+        if conv:
+            conv.end_time = datetime.utcnow()
+            db.commit()

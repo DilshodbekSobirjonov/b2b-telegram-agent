@@ -21,6 +21,14 @@ export const fetcher = async (endpoint: string, options: RequestInit = {}) => {
   });
 
   if (!res.ok) {
+    // If a token is present but the server rejects it, the session has expired — clear and redirect.
+    if (res.status === 401 && typeof window !== 'undefined' && localStorage.getItem('auth_token')) {
+      localStorage.removeItem('auth_token')
+      localStorage.removeItem('user_session')
+      document.cookie = 'auth_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'
+      window.location.href = '/login'
+      throw new Error('Session expired. Please log in again.')
+    }
 
     const info = await res.json().catch(() => ({}));
     console.error(`API Error [${res.status}]:`, info);

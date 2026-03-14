@@ -9,6 +9,7 @@ export interface Session {
   username: string
   role: 'SUPER_ADMIN' | 'BUSINESS_ADMIN'
   business_id?: number
+  assistant_type?: 'sales' | 'booking'
 }
 
 interface AuthContextType {
@@ -41,7 +42,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    setSession(readStorage())
+    const stored = readStorage()
+    setSession(stored)
+    if (stored) {
+      api.get('/api/auth/session').then((fresh: any) => {
+        const updated = { ...stored, ...fresh }
+        localStorage.setItem('user_session', JSON.stringify(updated))
+        setSession(updated as Session)
+      }).catch(() => {})
+    }
     setLoading(false)
   }, [])
 

@@ -2,20 +2,18 @@ from core.logger import get_logger
 
 logger = get_logger()
 
-class MockAdapter:
-    """A safe fallback AI provider that doesn't crash when API keys are missing."""
-    
-    def __init__(self, api_key=None):
-        logger.warning("MockAdapter initialized. AI features will use predefined safe responses.")
-        self.api_key = api_key
 
-    async def detect_intent(self, user_message: str) -> str:
-        text = user_message.lower()
+class MockAdapter:
+    """Safe fallback — not used in production. Kept for local development without API keys."""
+
+    def __init__(self, api_key=None):
+        logger.warning("MockAdapter active — AI features return canned responses.")
+
+    async def detect_intent(self, text: str) -> str:
+        text = text.lower()
         if "book" in text or "appointment" in text:
             return "booking"
-        elif "price" in text or "cost" in text or "faq" in text or "help" in text:
-            return "faq"
         return "faq"
 
-    async def generate_response(self, context: str, user_message: str) -> str:
-        return "I am currently in safe fallback mode because the AI API key is not configured. Please contact the administrator."
+    async def generate_reply(self, context: dict, prompt: str) -> str:
+        return "AI is not configured for this business. Please contact the administrator."
