@@ -132,7 +132,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 # ── Routers ───────────────────────────────────────────────────────────────────
 from api.auth import router as auth_router
 from api.dashboard import router as dashboard_router
