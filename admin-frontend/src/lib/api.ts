@@ -44,7 +44,9 @@ export const fetcher = async (endpoint: string, options: RequestInit = {}) => {
 export const api = {
   fetcher,
 
-  // Convenience wrappers for mutations
+  get: (endpoint: string) =>
+    fetcher(endpoint, { method: 'GET' }),
+
   post: (endpoint: string, body: unknown) =>
     fetcher(endpoint, { method: 'POST', body: JSON.stringify(body) }),
 
