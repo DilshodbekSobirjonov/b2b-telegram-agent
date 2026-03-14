@@ -4,7 +4,7 @@ import { Cpu, Key, Plus, Loader2, X, AlertCircle, Pencil } from "lucide-react"
 import useSWR, { mutate } from "swr"
 import { api } from "@/lib/api"
 import { useAuth } from "@/components/auth-provider"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 
 interface AIProvider {
   id: number
@@ -133,10 +133,21 @@ function ProviderModal({
 // ── Main page ────────────────────────────────────────────────────────────────
 export default function AISettingsPage() {
   const { data: providers, isLoading } = useSWR<AIProvider[]>("/api/ai-providers", api.fetcher)
+  const { data: platformSettings, mutate: refreshSettings } = useSWR<{ global_ai_rules: string }>("/api/platform-settings", api.fetcher)
+  
   const { session, loading: authLoading } = useAuth()
   const [actionId, setActionId]           = useState<number | null>(null)
   const [showAdd, setShowAdd]             = useState(false)
   const [editing, setEditing]             = useState<AIProvider | null>(null)
+  
+  const [globalRules, setGlobalRules] = useState<string>("")
+  const [isSavingRules, setIsSavingRules] = useState(false)
+  const [isEditingRules, setIsEditingRules] = useState(false)
+
+  // Sync state when data loads
+  useEffect(() => {
+    if (platformSettings) setGlobalRules(platformSettings.global_ai_rules)
+  }, [platformSettings])
 
   if (authLoading) return <div className="min-h-screen bg-background" />
   if (!session || session.role !== "SUPER_ADMIN") return null
@@ -164,12 +175,73 @@ export default function AISettingsPage() {
     }
   }
 
+  const handleSaveGlobalRules = async () => {
+    setIsSavingRules(true)
+    try {
+      await api.patch("/api/platform-settings", { global_ai_rules: globalRules })
+      refreshSettings()
+      setIsEditingRules(false)
+    } catch (err: any) {
+      alert(err.message || "Failed to save global rules")
+    } finally {
+      setIsSavingRules(false)
+    }
+  }
+
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {showAdd && <ProviderModal onClose={() => setShowAdd(false)} onSuccess={refresh} />}
       {editing  && <ProviderModal initial={editing} onClose={() => setEditing(null)} onSuccess={refresh} />}
 
-      <div className="flex justify-between items-end">
+      {/* Global Context Section */}
+      <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
+        <div className="mb-4">
+          <h2 className="text-xl font-bold text-foreground">Global AI Rules</h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            These rules are applied to <b>every</b> AI response across all businesses on the platform.
+            Use this to enforce platform-wide safety flags, tone, or format requirements.
+          </p>
+        </div>
+        
+        <textarea 
+          value={globalRules}
+          onChange={(e) => setGlobalRules(e.target.value)}
+          disabled={!isEditingRules || isSavingRules}
+          className={`w-full h-32 border border-border rounded-xl p-4 text-sm font-mono focus:ring-1 focus:ring-primary outline-none transition-all resize-none ${
+            !isEditingRules 
+              ? "bg-muted/50 text-muted-foreground opacity-80 cursor-not-allowed" 
+              : "bg-background text-foreground"
+          }`}
+          placeholder="e.g. Always be professional. Do not provide medical advice. Return prices in USD."
+        />
+        <div className="mt-4 flex justify-end gap-3">
+          <button 
+            onClick={() => setIsEditingRules(true)}
+            disabled={isEditingRules || isSavingRules}
+            className={`flex items-center gap-2 px-6 py-2 rounded-xl text-sm font-semibold transition-all ${
+              isEditingRules || isSavingRules
+                ? "bg-muted text-muted-foreground opacity-50 cursor-not-allowed"
+                : "bg-secondary text-secondary-foreground hover:bg-secondary/80 border border-border"
+            }`}
+          >
+            <Pencil className="w-4 h-4" /> Edit
+          </button>
+          <button 
+            onClick={handleSaveGlobalRules}
+            disabled={!isEditingRules || isSavingRules}
+            className={`flex items-center gap-2 px-6 py-2 rounded-xl text-sm font-semibold transition-all ${
+               !isEditingRules || isSavingRules
+                ? "bg-muted text-muted-foreground opacity-50 cursor-not-allowed"
+                : "bg-gradient-to-r from-indigo-500 to-purple-500 text-white hover:opacity-90 shadow-sm"
+            }`}
+          >
+            {isSavingRules && <Loader2 className="w-4 h-4 animate-spin" />}
+            {isSavingRules ? "Saving..." : "Save Global Rules"}
+          </button>
+        </div>
+      </div>
+
+      <div className="flex justify-between items-end mt-12">
         <div>
           <h1 className="text-3xl font-bold text-foreground">AI Engine Registry</h1>
           <p className="text-muted-foreground">Manage global AI providers. Businesses reference these engines by name.</p>
@@ -262,3 +334,4 @@ export default function AISettingsPage() {
     </div>
   )
 }
+

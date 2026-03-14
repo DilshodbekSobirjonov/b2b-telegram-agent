@@ -54,6 +54,12 @@ def get_current_user(
     return user
 
 
+def require_super_admin(current_user: AdminUser = Depends(get_current_user)) -> AdminUser:
+    if current_user.role != "SUPER_ADMIN":
+        raise HTTPException(status_code=403, detail="Super Admin privileges required")
+    return current_user
+
+
 @router.post("/login")
 def login(req: LoginRequest, db: Session = Depends(Repository.get_db)):
     user = db.query(AdminUser).filter(AdminUser.username == req.username).first()

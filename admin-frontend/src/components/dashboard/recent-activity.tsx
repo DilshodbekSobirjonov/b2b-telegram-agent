@@ -14,7 +14,7 @@ export function RecentActivity({ bookings }: RecentActivityProps) {
           <div key={booking.id} className="flex items-center justify-between p-3 rounded-lg border border-transparent hover:border-border hover:bg-muted/30 transition-all">
             <div className="flex items-center gap-4">
               <div className="w-10 h-10 rounded-full bg-gradient-primary flex items-center justify-center text-white font-bold shadow-md">
-                {booking.clientName.charAt(0)}
+                {booking.clientName?.charAt(0) || "G"}
               </div>
               <div>
                 <p className="text-sm font-medium text-foreground">{booking.clientName}</p>
@@ -28,7 +28,7 @@ export function RecentActivity({ bookings }: RecentActivityProps) {
               booking.status === 'pending' ? "bg-amber-500/10 text-amber-500" :
               "bg-rose-500/10 text-rose-500"
             )}>
-              {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+              {booking.status ? (booking.status.charAt(0).toUpperCase() + booking.status.slice(1)) : "Pending"}
             </div>
           </div>
         ))}

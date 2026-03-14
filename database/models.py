@@ -15,6 +15,14 @@ class AIProvider(Base):
     is_active = Column(Boolean, default=True)
 
 
+class PlatformSetting(Base):
+    """Global settings that apply across the entire platform."""
+    __tablename__ = 'platform_settings'
+    id = Column(Integer, primary_key=True, index=True)
+    key = Column(String, unique=True, nullable=False, index=True)
+    value = Column(Text, nullable=True)
+
+
 class Business(Base):
     __tablename__ = 'businesses'
     id = Column(Integer, primary_key=True, index=True)
@@ -31,6 +39,16 @@ class Business(Base):
     slot_duration = Column(Integer, default=30)            # minutes per slot
     min_booking_duration = Column(Integer, default=30)     # minimum bookable duration
     max_booking_duration = Column(Integer, default=120)    # maximum bookable duration
+    buffer_after = Column(Integer, default=0)              # minutes buffer after booking
+
+
+class BusinessClosedDay(Base):
+    """Full-day closures / holidays."""
+    __tablename__ = 'business_closed_days'
+    id = Column(Integer, primary_key=True, index=True)
+    business_id = Column(Integer, ForeignKey('businesses.id', ondelete='CASCADE'), nullable=False)
+    date = Column(DateTime, nullable=False)
+    reason = Column(String, nullable=True)
 
 
 class WorkingHours(Base):
